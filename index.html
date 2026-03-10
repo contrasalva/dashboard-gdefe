@@ -1,104 +1,59 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Dashboard Generación de Fe</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: system-ui, sans-serif; background: #f8fafc; color: #1e293b; }
-
-    header {
-      background: linear-gradient(135deg, #6366f1, #4f46e5);
-      color: white; padding: 20px 24px;
-      display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;
-    }
-    header h1 { font-size: 1.4rem; font-weight: 700; }
-    header p { font-size: 0.85rem; color: #c7d2fe; margin-top: 2px; }
-    #ultimo-update { font-size: 0.75rem; color: #c7d2fe; }
-
-    .controles {
-      background: white; border-bottom: 1px solid #e2e8f0;
-      padding: 14px 24px; display: flex; flex-wrap: wrap; gap: 16px; align-items: center;
-    }
-    .controles label { font-size: 0.75rem; color: #64748b; font-weight: 600; margin-right: 6px; }
-    .controles select, .controles input[type=date] {
-      border: 1px solid #cbd5e1; border-radius: 8px;
-      padding: 6px 10px; font-size: 0.85rem; outline: none;
-    }
-    .controles select:focus, .controles input:focus { border-color: #6366f1; }
-    #btn-limpiar {
-      font-size: 0.78rem; color: #6366f1; background: none;
-      border: none; cursor: pointer; text-decoration: underline; display: none;
-    }
-    #btn-actualizar {
-      margin-left: auto; background: #6366f1; color: white;
-      border: none; border-radius: 8px; padding: 7px 16px;
-      font-size: 0.85rem; cursor: pointer; font-weight: 600;
-    }
-    #btn-actualizar:hover { background: #4f46e5; }
-
-    .vistas {
-      background: white; border-bottom: 1px solid #e2e8f0;
-      padding: 10px 24px; display: flex; gap: 8px;
-    }
-    .vistas button {
-      padding: 6px 14px; border-radius: 20px; border: none;
-      font-size: 0.82rem; font-weight: 600; cursor: pointer;
-      background: #f1f5f9; color: #475569; transition: all .2s;
-    }
-    .vistas button.active { background: #6366f1; color: white; }
-
-    main { max-width: 1100px; margin: 0 auto; padding: 24px; }
-
-    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px,1fr)); gap: 14px; margin-bottom: 24px; }
-    .kpi-card {
-      background: white; border-radius: 12px; border: 1px solid #e2e8f0;
-      padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,.04);
-    }
-    .kpi-card .icon { font-size: 1.4rem; margin-bottom: 6px; }
-    .kpi-card .label { font-size: 0.72rem; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
-    .kpi-card .value { font-size: 1.8rem; font-weight: 800; color: #1e293b; margin-top: 2px; }
-
-    .charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(440px,1fr)); gap: 20px; margin-bottom: 24px; }
-    .chart-card {
-      background: white; border-radius: 12px; border: 1px solid #e2e8f0;
-      padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,.04);
-    }
-    .chart-card h2 { font-size: 0.85rem; font-weight: 700; color: #334155; margin-bottom: 14px; }
-    .chart-card canvas { max-height: 280px; }
-    .chart-full { grid-column: 1 / -1; }
-
-    table { width: 100%; border-collapse: collapse; font-size: 0.83rem; }
-    th { background: #f8fafc; padding: 10px 12px; text-align: left; font-size: 0.72rem; color: #64748b; text-transform: uppercase; letter-spacing: .05em; }
-    td { padding: 9px 12px; border-top: 1px solid #f1f5f9; color: #334155; }
-    tr:hover td { background: #f8fafc; }
-    .badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 0.72rem; font-weight: 600; }
-
-    #loading {
-      text-align: center; padding: 60px 20px; color: #94a3b8; font-size: 1rem;
-    }
-    #error-msg {
-      background: #fef2f2; border: 1px solid #fecaca; border-radius: 10px;
-      padding: 16px 20px; color: #b91c1c; font-size: 0.88rem; display: none; margin-bottom: 20px;
-    }
-
-    .seccion { display: none; }
-    .seccion.activa { display: block; }
-
-    @media (max-width: 600px) {
-      .charts-grid { grid-template-columns: 1fr; }
-      .kpi-card .value { font-size: 1.4rem; }
-    }
-  </style>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Dashboard Generación de Fe</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#f8fafc;color:#1e293b}
+header{background:linear-gradient(135deg,#6366f1,#4f46e5);color:white;padding:20px 24px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}
+header h1{font-size:1.4rem;font-weight:700}
+header p{font-size:0.85rem;color:#c7d2fe;margin-top:2px}
+.header-left{display:flex;align-items:center;gap:16px}
+.header-left img{height:54px;width:auto;border-radius:8px}
+#ultimo-update{font-size:0.75rem;color:#c7d2fe}
+.controles{background:white;border-bottom:1px solid #e2e8f0;padding:14px 24px;display:flex;flex-wrap:wrap;gap:16px;align-items:center}
+.controles label{font-size:0.75rem;color:#64748b;font-weight:600;margin-right:6px}
+.controles select,.controles input[type=date]{border:1px solid #cbd5e1;border-radius:8px;padding:6px 10px;font-size:0.85rem;outline:none}
+#btn-limpiar{font-size:0.78rem;color:#6366f1;background:none;border:none;cursor:pointer;text-decoration:underline;display:none}
+#btn-actualizar{margin-left:auto;background:#6366f1;color:white;border:none;border-radius:8px;padding:7px 16px;font-size:0.85rem;cursor:pointer;font-weight:600}
+#btn-actualizar:hover{background:#4f46e5}
+.vistas{background:white;border-bottom:1px solid #e2e8f0;padding:10px 24px;display:flex;gap:8px}
+.vistas button{padding:6px 14px;border-radius:20px;border:none;font-size:0.82rem;font-weight:600;cursor:pointer;background:#f1f5f9;color:#475569;transition:all .2s}
+.vistas button.active{background:#6366f1;color:white}
+main{max-width:1100px;margin:0 auto;padding:24px}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:24px}
+.kpi-card{background:white;border-radius:12px;border:1px solid #e2e8f0;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.kpi-card .icon{font-size:1.4rem;margin-bottom:6px}
+.kpi-card .label{font-size:0.72rem;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+.kpi-card .value{font-size:1.8rem;font-weight:800;color:#1e293b;margin-top:2px}
+.charts-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(440px,1fr));gap:20px;margin-bottom:24px}
+.chart-card{background:white;border-radius:12px;border:1px solid #e2e8f0;padding:20px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.chart-card h2{font-size:0.85rem;font-weight:700;color:#334155;margin-bottom:6px}
+.chart-card .subtitle{font-size:0.75rem;color:#94a3b8;margin-bottom:14px}
+.chart-card canvas{max-height:280px}
+.chart-full{grid-column:1/-1}
+.warning{display:flex;align-items:flex-start;gap:12px;background:#fffbeb;border:1px solid #fcd34d;border-radius:12px;padding:14px 18px;margin-bottom:24px;color:#92400e;font-size:0.85rem}
+.warning strong{display:block;margin-bottom:4px}
+table{width:100%;border-collapse:collapse;font-size:0.83rem}
+th{background:#f8fafc;padding:10px 12px;text-align:left;font-size:0.72rem;color:#64748b;text-transform:uppercase;letter-spacing:.05em}
+td{padding:9px 12px;border-top:1px solid #f1f5f9;color:#334155}
+tr:hover td{background:#f8fafc}
+#loading{text-align:center;padding:60px 20px;color:#94a3b8;font-size:1rem}
+#error-msg{background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:16px 20px;color:#b91c1c;font-size:0.88rem;display:none;margin-bottom:20px}
+.seccion{display:none}
+.seccion.activa{display:block}
+@media(max-width:600px){.charts-grid{grid-template-columns:1fr}}
+</style>
 </head>
 <body>
 
 <header>
-  <div style="display:flex;align-items:center;gap:16px">
-    <img src="logo.png" alt="Logo" style="height:54px;width:auto;border-radius:8px"/>
+  <div class="header-left">
+    <img src="logo.png" alt="Logo" onerror="this.style.display='none'"/>
     <div>
       <h1>Generación de Fe</h1>
       <p>Dashboard de Asistencia · Todas las Misiones</p>
@@ -108,14 +63,8 @@
 </header>
 
 <div class="controles">
-  <div>
-    <label>Misión:</label>
-    <select id="filtro-mision"><option value="">Todas</option></select>
-  </div>
-  <div>
-    <label>Fecha:</label>
-    <input type="date" id="filtro-desde"/>
-  </div>
+  <div><label>Misión:</label><select id="filtro-mision"><option value="">Todas</option></select></div>
+  <div><label>Fecha:</label><input type="date" id="filtro-fecha"/></div>
   <button id="btn-limpiar">✕ Limpiar fecha</button>
   <button id="btn-actualizar">🔄 Actualizar datos</button>
 </div>
@@ -130,303 +79,307 @@
   <div id="loading">⏳ Cargando datos desde Google Sheets...</div>
   <div id="error-msg"></div>
 
-  <!-- RESUMEN -->
   <div class="seccion" id="sec-resumen">
+    <div id="warning-florida" class="warning" style="display:none">
+      <span style="font-size:1.2rem">⚠️</span>
+      <div><strong>Posible duplicidad de asistentes — La Florida</strong>Esta misión realiza reuniones el sábado y domingo. Algunas personas podrían asistir ambos días, por lo que los totales pueden estar sobreestimados. Los promedios se muestran separados por día.</div>
+    </div>
     <div class="kpi-grid" id="kpis"></div>
     <div class="charts-grid">
-      <div class="chart-card"><h2>Asistencia por Mes</h2><canvas id="chart-mes"></canvas></div>
+      <div class="chart-card" id="card-principal"><h2 id="titulo-principal"></h2><p class="subtitle" id="subtitulo-principal"></p><canvas id="chart-principal"></canvas></div>
       <div class="chart-card"><h2>Distribución por Misión</h2><canvas id="chart-pie"></canvas></div>
       <div class="chart-card chart-full"><h2>Decisiones de Fe por Mes</h2><canvas id="chart-decisiones"></canvas></div>
     </div>
   </div>
 
-  <!-- TENDENCIA -->
   <div class="seccion" id="sec-tendencia">
+    <div id="warning-florida-t" class="warning" style="display:none">
+      <span style="font-size:1.2rem">⚠️</span>
+      <div><strong>Posible duplicidad de asistentes — La Florida</strong>Los promedios se muestran separados por día (sábado/domingo).</div>
+    </div>
     <div class="charts-grid">
-      <div class="chart-card chart-full"><h2>Tendencia de Asistencia Mensual</h2><canvas id="chart-tendencia"></canvas></div>
+      <div class="chart-card chart-full" id="card-sabdom" style="display:none"><h2>Tendencia Sábado vs Domingo — La Florida</h2><p class="subtitle">Promedio de asistentes por reunión según día</p><canvas id="chart-sabdom"></canvas></div>
+      <div class="chart-card chart-full"><h2>Tendencia General</h2><canvas id="chart-tendencia"></canvas></div>
     </div>
-    <div class="chart-card"><h2>Resumen por Mes</h2>
-      <table id="tabla-meses"><thead><tr><th>Mes</th><th>Adultos</th><th>Niños</th><th>Visitas</th><th>Decisiones</th><th>Total</th></tr></thead><tbody></tbody></table>
-    </div>
+    <div class="chart-card"><h2>Resumen por Mes</h2><div style="overflow-x:auto"><table id="tabla-meses"><thead></thead><tbody></tbody></table></div></div>
   </div>
 
-  <!-- POR MISIÓN -->
   <div class="seccion" id="sec-misiones">
     <div class="charts-grid">
       <div class="chart-card chart-full"><h2>Comparación entre Misiones</h2><canvas id="chart-misiones"></canvas></div>
     </div>
-    <div class="chart-card" style="margin-top:0"><h2>Detalle por Misión</h2>
-      <table id="tabla-misiones"><thead><tr><th>Misión</th><th>Adultos</th><th>Niños</th><th>Visitas</th><th>Decisiones de Fe</th><th>Total</th></tr></thead><tbody></tbody></table>
-    </div>
+    <div class="chart-card" style="margin-top:0"><h2>Detalle por Misión</h2><div style="overflow-x:auto"><table id="tabla-misiones"><thead><tr><th>Misión</th><th>Adultos</th><th>Niños</th><th>Vis. Adultos</th><th>Vis. Niños</th><th>Decisiones</th><th>Total</th></tr></thead><tbody></tbody></table></div></div>
   </div>
 </main>
 
 <script>
-// ══════════════════════════════════════════════
-// 🔧 CONFIGURACIÓN — solo cambia estos valores
-// ══════════════════════════════════════════════
 const SHEET_ID  = "1H3K5kRTe1ntcme8NylN9Ei6tYsvzvQ41_xLX0pMQe9M";
-const SHEET_GID = "1575814348"; // pestaña Dashboard
-// ══════════════════════════════════════════════
+const SHEET_GID = "1575814348";
+const CSV_URL   = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${SHEET_GID}`;
+const COLORS    = ["#6366f1","#22c55e","#f59e0b","#ef4444","#3b82f6","#ec4899","#14b8a6","#f97316","#a855f7","#64748b","#84cc16","#06b6d4"];
+const MES_LBL   = {"2025-04":"Abr 25","2025-05":"May 25","2025-06":"Jun 25","2025-07":"Jul 25","2025-08":"Ago 25","2025-09":"Sep 25","2025-10":"Oct 25","2025-11":"Nov 25","2025-12":"Dic 25","2026-01":"Ene 26","2026-02":"Feb 26","2026-03":"Mar 26"};
 
-const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${SHEET_GID}`;
+let allData = [], charts = {}, vistaActual = "resumen";
 
-const COLORS = ["#6366f1","#22c55e","#f59e0b","#ef4444","#3b82f6","#ec4899","#14b8a6","#f97316","#a855f7","#64748b","#84cc16","#06b6d4"];
-const MES_LABELS = {"2025-04":"Abr 25","2025-05":"May 25","2025-06":"Jun 25","2025-07":"Jul 25","2025-08":"Ago 25","2025-09":"Sep 25","2025-10":"Oct 25","2025-11":"Nov 25","2025-12":"Dic 25","2026-01":"Ene 26","2026-02":"Feb 26","2026-03":"Mar 26"};
+const fmt   = n => Number(n||0).toLocaleString("es-CL");
+const toInt = v => { const n=parseInt(String(v||0).replace(/\D/g,"")); return isNaN(n)?0:n; };
+const diaSemana = s => { const d=new Date(s+"T12:00:00"); return isNaN(d)?-1:d.getDay(); };
 
-let allData = [], charts = {};
-
-// ── Utilidades ──────────────────────────────
-const fmt = n => Number(n).toLocaleString("es-CL");
-const toInt = v => { const n = parseInt(String(v).replace(/\D/g,"")); return isNaN(n)?0:n; };
-const parseFecha = s => { const d = new Date(s); return isNaN(d)?null:d.toISOString().slice(0,10); };
-
-// ── Parsear CSV ─────────────────────────────
 function parseRows(results) {
-  const rows = [], headers = results.data[0];
-  const idx = {
-    mision: headers.findIndex(h => /mis.+n/i.test(h)),
-    fecha:  headers.findIndex(h => /fecha.*reuni/i.test(h)),
-    adultos:headers.findIndex(h => /adultos/i.test(h)),
-    visitas:headers.findIndex(h => /visitas.*n.mero|^visitas/i.test(h)),
-    ninos:  headers.findIndex(h => /asistencia.*ni.os.*solo|ni.os.*asist/i.test(h)),
-    ninosV: headers.findIndex(h => /ni.os.*visitas|visitas.*ni.os/i.test(h)),
-    deci:   headers.findIndex(h => /decisiones/i.test(h)),
+  const rows=[], H=results.data[0]||[];
+  const ci = {
+    mision: H.findIndex(h=>/mis.+n/i.test(h)),
+    fecha:  H.findIndex(h=>/fecha/i.test(h)),
+    adultos:H.findIndex(h=>/adultos/i.test(h)),
+    visitas:H.findIndex(h=>/^visitas/i.test(h)),
+    ninos:  H.findIndex(h=>/asistencia.*ni|ni.*asist/i.test(h)),
+    ninosV: H.findIndex(h=>/ni.*visitas|visitas.*ni/i.test(h)),
+    deci:   H.findIndex(h=>/decis/i.test(h)),
   };
-
-  for (let i = 1; i < results.data.length; i++) {
-    const r = results.data[i];
-    if (!r || r.length < 4) continue;
-    const mision = (r[idx.mision]||"").trim();
-    const fechaRaw = r[idx.fecha] || "";
-    if (!mision || !fechaRaw) continue;
-    // parse dd/mm/yyyy or yyyy-mm-dd
-    let fecha;
-    if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(fechaRaw)) {
-      const [d,m,y] = fechaRaw.split("/");
-      fecha = `${y.padStart(4,"0")}-${m.padStart(2,"0")}-${d.padStart(2,"0")}`;
-    } else {
-      fecha = parseFecha(fechaRaw);
+  for(let i=1;i<results.data.length;i++){
+    const r=results.data[i]; if(!r||r.length<4) continue;
+    const mision=(r[ci.mision]||"").trim();
+    let fecha=(r[ci.fecha]||"").trim();
+    if(!mision||!fecha) continue;
+    if(/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(fecha)){
+      const[d,m,y]=fecha.split("/");
+      fecha=`${y.padStart(4,"0")}-${m.padStart(2,"0")}-${d.padStart(2,"0")}`;
     }
-    if (!fecha || fecha < "2020-01-01" || fecha > "2030-12-31") continue;
-    const adultos   = toInt(r[idx.adultos]);
-    const visitas   = toInt(r[idx.visitas]);
-    const ninos     = toInt(r[idx.ninos]);
-    const ninosV    = toInt(r[idx.ninosV]);
-    const deci      = toInt(r[idx.deci]);
-    rows.push({ mision, fecha, mes: fecha.slice(0,7), adultos, visitas, ninos, ninosV, deci,
-      total: adultos + visitas + ninos + ninosV });
+    if(fecha<"2020-01-01"||fecha>"2030-12-31") continue;
+    const dia=diaSemana(fecha);
+    const adultos=toInt(r[ci.adultos]),visitas=toInt(r[ci.visitas]),
+          ninos=toInt(r[ci.ninos]),ninosV=toInt(r[ci.ninosV]),deci=toInt(r[ci.deci]);
+    rows.push({mision,fecha,mes:fecha.slice(0,7),dia,
+      esSab:dia===6,esDom:dia===0,
+      adultos,visitas,ninos,ninosV,deci,
+      total:adultos+visitas+ninos+ninosV});
   }
   return rows;
 }
 
-// ── Filtrar datos ────────────────────────────
-function filtrar() {
-  const m = document.getElementById("filtro-mision").value;
-  const d = document.getElementById("filtro-desde").value;
-  const h = document.getElementById("filtro-hasta").value;
-  document.getElementById("btn-limpiar").style.display = (d||h) ? "inline" : "none";
-  return allData.filter(r =>
-    (!m || r.mision === m) &&
-    (!d || r.fecha === d)
-  );
+function filtrar(){
+  const m=document.getElementById("filtro-mision").value;
+  const f=document.getElementById("filtro-fecha").value;
+  document.getElementById("btn-limpiar").style.display=f?"inline":"none";
+  return allData.filter(r=>(!m||r.mision===m)&&(!f||r.fecha===f));
 }
 
-// ── Agrupar ──────────────────────────────────
-function agruparPorMes(data) {
-  const map = {};
-  data.forEach(r => {
-    if (!map[r.mes]) map[r.mes] = {mes:r.mes,adultos:0,visitas:0,ninos:0,deci:0,total:0};
-    map[r.mes].adultos += r.adultos; map[r.mes].visitas += r.visitas+r.ninosV;
-    map[r.mes].ninos   += r.ninos;   map[r.mes].deci    += r.deci;
-    map[r.mes].total   += r.total;
+function agruparMes(data,esLF){
+  const map={},cnt={},cntS={},cntD={},sumS={},sumD={};
+  const meses=[...new Set(allData.map(d=>d.mes))].sort();
+  data.forEach(d=>{
+    if(!map[d.mes]){map[d.mes]={mes:d.mes,adultos:0,visitas:0,ninos:0,ninosV:0,deci:0,total:0};cnt[d.mes]=0;cntS[d.mes]=0;cntD[d.mes]=0;sumS[d.mes]=0;sumD[d.mes]=0;}
+    map[d.mes].adultos+=d.adultos;map[d.mes].visitas+=d.visitas;map[d.mes].ninos+=d.ninos;
+    map[d.mes].ninosV+=d.ninosV;map[d.mes].deci+=d.deci;map[d.mes].total+=d.total;cnt[d.mes]++;
+    if(esLF){if(d.esSab){cntS[d.mes]++;sumS[d.mes]+=d.total;}if(d.esDom){cntD[d.mes]++;sumD[d.mes]+=d.total;}}
   });
-  return Object.values(map).sort((a,b)=>a.mes.localeCompare(b.mes));
+  return meses.map(m=>{
+    const r=map[m]||{mes:m,adultos:0,visitas:0,ninos:0,ninosV:0,deci:0,total:0};
+    const n=cnt[m]||1;
+    return{...r,label:MES_LBL[m]||m,
+      promedio:Math.round(r.total/n),
+      promSab:cntS[m]?Math.round(sumS[m]/cntS[m]):null,
+      promDom:cntD[m]?Math.round(sumD[m]/cntD[m]):null};
+  });
 }
 
-function agruparPorMision(data) {
-  const map = {};
-  data.forEach(r => {
-    if (!map[r.mision]) map[r.mision] = {mision:r.mision,adultos:0,visitas:0,ninos:0,deci:0,total:0};
-    map[r.mision].adultos += r.adultos; map[r.mision].visitas += r.visitas+r.ninosV;
-    map[r.mision].ninos   += r.ninos;   map[r.mision].deci    += r.deci;
-    map[r.mision].total   += r.total;
+function agruparMision(){
+  const map={};
+  allData.forEach(d=>{
+    if(!map[d.mision])map[d.mision]={mision:d.mision,adultos:0,ninos:0,visitas:0,ninosV:0,deci:0,total:0};
+    map[d.mision].adultos+=d.adultos;map[d.mision].ninos+=d.ninos;map[d.mision].visitas+=d.visitas;
+    map[d.mision].ninosV+=d.ninosV;map[d.mision].deci+=d.deci;map[d.mision].total+=d.total;
   });
   return Object.values(map).sort((a,b)=>b.total-a.total);
 }
 
-// ── Destruir chart previo ────────────────────
-function destroyChart(id) { if(charts[id]) { charts[id].destroy(); delete charts[id]; } }
+function destroyChart(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
 
-// ── Renderizar KPIs ──────────────────────────
-function renderKPIs(data) {
-  const tot = { adultos:0, visitas:0, ninos:0, deci:0, total:0 };
-  data.forEach(r => { tot.adultos+=r.adultos; tot.visitas+=r.visitas+r.ninosV; tot.ninos+=r.ninos; tot.deci+=r.deci; tot.total+=r.total; });
-  document.getElementById("kpis").innerHTML = [
-    {icon:"👥", label:"Asistencia Adultos",  val: fmt(tot.adultos)},
-    {icon:"🙋", label:"Visitas Adultos",      val: fmt(tot.visitas)},
-    {icon:"👶", label:"Asistencia Niños",     val: fmt(tot.ninos)},
-    {icon:"🧒", label:"Visitas Niños",        val: fmt(tot.ninosV)},
-    {icon:"❤️", label:"Decisiones de Fe",    val: fmt(tot.deci)},
+function renderKPIs(data){
+  const t={adultos:0,visitas:0,ninos:0,ninosV:0,deci:0};
+  data.forEach(d=>{t.adultos+=d.adultos;t.visitas+=d.visitas;t.ninos+=d.ninos;t.ninosV+=d.ninosV;t.deci+=d.deci;});
+  document.getElementById("kpis").innerHTML=[
+    {icon:"👥",label:"Asistencia Adultos",val:fmt(t.adultos)},
+    {icon:"🙋",label:"Visitas Adultos",val:fmt(t.visitas)},
+    {icon:"👶",label:"Asistencia Niños",val:fmt(t.ninos)},
+    {icon:"🧒",label:"Visitas Niños",val:fmt(t.ninosV)},
+    {icon:"❤️",label:"Decisiones de Fe",val:fmt(t.deci)},
   ].map(k=>`<div class="kpi-card"><div class="icon">${k.icon}</div><div class="label">${k.label}</div><div class="value">${k.val}</div></div>`).join("");
 }
 
-// ── Chart: Barras por mes ────────────────────
-function renderChartMes(data) {
-  destroyChart("mes");
-  const meses = agruparPorMes(data);
-  const labels = meses.map(m => MES_LABELS[m.mes]||m.mes);
-  charts["mes"] = new Chart(document.getElementById("chart-mes"), {
-    type:"bar",
-    data:{ labels, datasets:[
-      {label:"Adultos", data:meses.map(m=>m.adultos), backgroundColor:"#6366f1", borderRadius:4, stack:"a"},
-      {label:"Niños",   data:meses.map(m=>m.ninos),   backgroundColor:"#f59e0b", borderRadius:0, stack:"a"},
-      {label:"Visitas", data:meses.map(m=>m.visitas),  backgroundColor:"#22c55e", borderRadius:4, stack:"a"},
-    ]},
-    options:{responsive:true, plugins:{legend:{position:"bottom"}}, scales:{x:{stacked:true},y:{stacked:true}}}
-  });
-}
+function render(){
+  const data=filtrar();
+  const mision=document.getElementById("filtro-mision").value;
+  const esLF=mision==="La Florida";
 
-// ── Chart: Pie ───────────────────────────────
-function renderChartPie(data) {
-  destroyChart("pie");
-  const misiones = agruparPorMision(data);
-  charts["pie"] = new Chart(document.getElementById("chart-pie"), {
-    type:"doughnut",
-    data:{ labels:misiones.map(m=>m.mision), datasets:[{data:misiones.map(m=>m.total), backgroundColor:COLORS}]},
-    options:{responsive:true, plugins:{legend:{position:"right", labels:{font:{size:11}}}}}
-  });
-}
+  // warnings
+  document.getElementById("warning-florida").style.display=esLF?"flex":"none";
+  document.getElementById("warning-florida-t").style.display=esLF?"flex":"none";
 
-// ── Chart: Decisiones ────────────────────────
-function renderChartDecisiones(data) {
-  destroyChart("deci");
-  const meses = agruparPorMes(data);
-  charts["deci"] = new Chart(document.getElementById("chart-decisiones"), {
-    type:"line",
-    data:{ labels:meses.map(m=>MES_LABELS[m.mes]||m.mes), datasets:[{
-      label:"Decisiones de Fe", data:meses.map(m=>m.deci),
-      borderColor:"#ef4444", backgroundColor:"rgba(239,68,68,.1)",
-      fill:true, tension:.3, pointRadius:5, pointBackgroundColor:"#ef4444"
-    }]},
-    options:{responsive:true, plugins:{legend:{display:false}}}
-  });
-}
-
-// ── Chart: Tendencia ─────────────────────────
-function renderChartTendencia(data) {
-  destroyChart("tend");
-  const meses = agruparPorMes(data);
-  const labels = meses.map(m=>MES_LABELS[m.mes]||m.mes);
-  charts["tend"] = new Chart(document.getElementById("chart-tendencia"), {
-    type:"line",
-    data:{ labels, datasets:[
-      {label:"Adultos", data:meses.map(m=>m.adultos), borderColor:"#6366f1", backgroundColor:"rgba(99,102,241,.08)", fill:true, tension:.3, pointRadius:4},
-      {label:"Niños",   data:meses.map(m=>m.ninos),   borderColor:"#f59e0b", fill:false, tension:.3, pointRadius:4},
-      {label:"Visitas", data:meses.map(m=>m.visitas),  borderColor:"#22c55e", fill:false, tension:.3, pointRadius:4},
-    ]},
-    options:{responsive:true, plugins:{legend:{position:"bottom"}}}
-  });
-  // Tabla meses
-  const tbody = document.querySelector("#tabla-meses tbody");
-  tbody.innerHTML = meses.map(m=>`<tr>
-    <td><strong>${MES_LABELS[m.mes]||m.mes}</strong></td>
-    <td>${fmt(m.adultos)}</td><td>${fmt(m.ninos)}</td>
-    <td>${fmt(m.visitas)}</td>
-    <td><span class="badge" style="background:#fef2f2;color:#b91c1c">${fmt(m.deci)}</span></td>
-    <td><strong style="color:#6366f1">${fmt(m.total)}</strong></td>
-  </tr>`).join("");
-}
-
-// ── Chart: Por misión ─────────────────────────
-function renderChartMisiones(data) {
-  destroyChart("mis");
-  const misiones = agruparPorMision(data);
-  charts["mis"] = new Chart(document.getElementById("chart-misiones"), {
-    type:"bar",
-    data:{ labels:misiones.map(m=>m.mision), datasets:[
-      {label:"Adultos", data:misiones.map(m=>m.adultos), backgroundColor:"#6366f1", stack:"a"},
-      {label:"Niños",   data:misiones.map(m=>m.ninos),   backgroundColor:"#f59e0b", stack:"a"},
-      {label:"Visitas", data:misiones.map(m=>m.visitas),  backgroundColor:"#22c55e", stack:"a"},
-    ]},
-    options:{responsive:true, plugins:{legend:{position:"bottom"}}, scales:{x:{stacked:true},y:{stacked:true}}}
-  });
-  const tbody = document.querySelector("#tabla-misiones tbody");
-  tbody.innerHTML = misiones.map((m,i)=>`<tr>
-    <td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${COLORS[i%COLORS.length]};margin-right:6px"></span><strong>${m.mision}</strong></td>
-    <td>${fmt(m.adultos)}</td><td>${fmt(m.ninos)}</td><td>${fmt(m.visitas)}</td>
-    <td><span class="badge" style="background:#fef2f2;color:#b91c1c">❤️ ${fmt(m.deci)}</span></td>
-    <td><strong style="color:#6366f1">${fmt(m.total)}</strong></td>
-  </tr>`).join("");
-}
-
-// ── Render general ────────────────────────────
-let vistaActual = "resumen";
-function render() {
-  const data = filtrar();
   renderKPIs(data);
-  if (vistaActual === "resumen")   { renderChartMes(data); renderChartPie(data); renderChartDecisiones(data); }
-  if (vistaActual === "tendencia") { renderChartTendencia(data); }
-  if (vistaActual === "misiones")  { renderChartMisiones(data); }
+  const meses=agruparMes(data,esLF);
+  const labels=meses.map(m=>m.label);
+
+  if(vistaActual==="resumen"){
+    // Gráfico principal
+    destroyChart("principal");
+    if(esLF){
+      document.getElementById("titulo-principal").textContent="Promedio: Sábado vs Domingo";
+      document.getElementById("subtitulo-principal").textContent="Promedio de asistentes por reunión según día";
+      charts["principal"]=new Chart(document.getElementById("chart-principal"),{
+        type:"bar",
+        data:{labels,datasets:[
+          {label:"Prom. Sábado",data:meses.map(m=>m.promSab),backgroundColor:"#f59e0b",borderRadius:4},
+          {label:"Prom. Domingo",data:meses.map(m=>m.promDom),backgroundColor:"#6366f1",borderRadius:4},
+        ]},
+        options:{responsive:true,plugins:{legend:{position:"bottom"}}}
+      });
+    } else {
+      document.getElementById("titulo-principal").textContent="Asistencia por Mes";
+      document.getElementById("subtitulo-principal").textContent="Barras = totales · Línea roja = promedio por reunión";
+      charts["principal"]=new Chart(document.getElementById("chart-principal"),{
+        type:"bar",
+        data:{labels,datasets:[
+          {label:"Adultos",data:meses.map(m=>m.adultos),backgroundColor:"#6366f1",stack:"a"},
+          {label:"Niños",data:meses.map(m=>m.ninos),backgroundColor:"#f59e0b",stack:"a"},
+          {label:"Visitas Adultos",data:meses.map(m=>m.visitas),backgroundColor:"#22c55e",stack:"a"},
+          {label:"Visitas Niños",data:meses.map(m=>m.ninosV),backgroundColor:"#a855f7",stack:"a"},
+          {label:"Promedio x reunión",data:meses.map(m=>m.promedio),type:"line",borderColor:"#ef4444",backgroundColor:"transparent",borderWidth:2.5,pointRadius:4,borderDash:[6,3],yAxisID:"y2"},
+        ]},
+        options:{responsive:true,plugins:{legend:{position:"bottom"}},scales:{x:{stacked:true},y:{stacked:true},y2:{position:"right",ticks:{callback:v=>`~${v}`}}}}
+      });
+    }
+
+    // Pie
+    destroyChart("pie");
+    const pm=agruparMision();
+    charts["pie"]=new Chart(document.getElementById("chart-pie"),{
+      type:"doughnut",
+      data:{labels:pm.map(m=>m.mision),datasets:[{data:pm.map(m=>m.total),backgroundColor:COLORS}]},
+      options:{responsive:true,plugins:{legend:{position:"right",labels:{font:{size:11}}}}}
+    });
+
+    // Decisiones
+    destroyChart("deci");
+    charts["deci"]=new Chart(document.getElementById("chart-decisiones"),{
+      type:"line",
+      data:{labels,datasets:[{label:"Decisiones de Fe",data:meses.map(m=>m.deci),borderColor:"#ef4444",backgroundColor:"rgba(239,68,68,.1)",fill:true,tension:.3,pointRadius:5}]},
+      options:{responsive:true,plugins:{legend:{display:false}}}
+    });
+  }
+
+  if(vistaActual==="tendencia"){
+    // Sáb vs Dom solo La Florida
+    const cardSD=document.getElementById("card-sabdom");
+    cardSD.style.display=esLF?"block":"none";
+    if(esLF){
+      destroyChart("sabdom");
+      charts["sabdom"]=new Chart(document.getElementById("chart-sabdom"),{
+        type:"line",
+        data:{labels,datasets:[
+          {label:"Prom. Sábado",data:meses.map(m=>m.promSab),borderColor:"#f59e0b",borderWidth:2.5,pointRadius:4,tension:.3},
+          {label:"Prom. Domingo",data:meses.map(m=>m.promDom),borderColor:"#6366f1",borderWidth:2.5,pointRadius:4,tension:.3},
+        ]},
+        options:{responsive:true,plugins:{legend:{position:"bottom"}}}
+      });
+    }
+
+    destroyChart("tend");
+    charts["tend"]=new Chart(document.getElementById("chart-tendencia"),{
+      type:"line",
+      data:{labels,datasets:[
+        {label:"Adultos",data:meses.map(m=>m.adultos),borderColor:"#6366f1",tension:.3,pointRadius:3,borderWidth:2},
+        {label:"Niños",data:meses.map(m=>m.ninos),borderColor:"#f59e0b",tension:.3,pointRadius:3,borderWidth:2},
+        {label:"Visitas Adultos",data:meses.map(m=>m.visitas),borderColor:"#22c55e",tension:.3,pointRadius:3,borderWidth:2},
+        {label:"Visitas Niños",data:meses.map(m=>m.ninosV),borderColor:"#a855f7",tension:.3,pointRadius:3,borderWidth:2},
+      ]},
+      options:{responsive:true,plugins:{legend:{position:"bottom"}}}
+    });
+
+    // Tabla
+    const thead=document.querySelector("#tabla-meses thead");
+    const tbody=document.querySelector("#tabla-meses tbody");
+    thead.innerHTML=`<tr>${["Mes","Adultos","Vis. Adultos","Niños","Vis. Niños","Decisiones",
+      ...(esLF?["Prom. Sábado","Prom. Domingo"]:["Prom./reunión"]),"Total"]
+      .map(h=>`<th>${h}</th>`).join("")}</tr>`;
+    tbody.innerHTML=meses.map((m,i)=>`<tr>
+      <td><strong>${m.label}</strong></td>
+      <td>${fmt(m.adultos)}</td><td>${fmt(m.visitas)}</td>
+      <td>${fmt(m.ninos)}</td><td>${fmt(m.ninosV)}</td>
+      <td style="color:#b91c1c;font-weight:600">${fmt(m.deci)}</td>
+      ${esLF
+        ?`<td style="color:#d97706;font-weight:600">${m.promSab!=null?`~${m.promSab}`:"—"}</td><td style="color:#6366f1;font-weight:600">${m.promDom!=null?`~${m.promDom}`:"—"}</td>`
+        :`<td style="color:#ea580c;font-weight:600">~${m.promedio}</td>`}
+      <td style="color:#6366f1;font-weight:700">${fmt(m.total)}</td>
+    </tr>`).join("");
+  }
+
+  if(vistaActual==="misiones"){
+    const pm=agruparMision();
+    destroyChart("mis");
+    charts["mis"]=new Chart(document.getElementById("chart-misiones"),{
+      type:"bar",
+      data:{labels:pm.map(m=>m.mision),datasets:[
+        {label:"Adultos",data:pm.map(m=>m.adultos),backgroundColor:"#6366f1",stack:"a"},
+        {label:"Niños",data:pm.map(m=>m.ninos),backgroundColor:"#f59e0b",stack:"a"},
+        {label:"Visitas Adultos",data:pm.map(m=>m.visitas),backgroundColor:"#22c55e",stack:"a"},
+        {label:"Visitas Niños",data:pm.map(m=>m.ninosV),backgroundColor:"#a855f7",stack:"a"},
+      ]},
+      options:{responsive:true,plugins:{legend:{position:"bottom"}},scales:{x:{stacked:true},y:{stacked:true}}}
+    });
+    document.querySelector("#tabla-misiones tbody").innerHTML=pm.map((m,i)=>`<tr>
+      <td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${COLORS[i%COLORS.length]};margin-right:6px"></span><strong>${m.mision}</strong></td>
+      <td>${fmt(m.adultos)}</td><td>${fmt(m.ninos)}</td><td>${fmt(m.visitas)}</td><td>${fmt(m.ninosV)}</td>
+      <td style="color:#b91c1c;font-weight:600">❤️ ${fmt(m.deci)}</td>
+      <td style="color:#6366f1;font-weight:700">${fmt(m.total)}</td>
+    </tr>`).join("");
+  }
 }
 
-function mostrarVista(v) {
-  vistaActual = v;
-  document.querySelectorAll(".seccion").forEach(s => s.classList.remove("activa"));
+function mostrarVista(v){
+  vistaActual=v;
+  document.querySelectorAll(".seccion").forEach(s=>s.classList.remove("activa"));
   document.getElementById(`sec-${v}`).classList.add("activa");
-  document.querySelectorAll(".vistas button").forEach(b => b.classList.toggle("active", b.dataset.vista===v));
+  document.querySelectorAll(".vistas button").forEach(b=>b.classList.toggle("active",b.dataset.vista===v));
   render();
 }
 
-// ── Cargar CSV ────────────────────────────────
-function cargar() {
-  document.getElementById("loading").style.display = "block";
-  document.getElementById("error-msg").style.display = "none";
-  document.querySelectorAll(".seccion").forEach(s => s.classList.remove("activa"));
-
-  Papa.parse(CSV_URL, {
-    download: true,
-    skipEmptyLines: true,
-    complete(results) {
-      document.getElementById("loading").style.display = "none";
-      try {
-        allData = parseRows(results);
-        if (!allData.length) throw new Error("No se encontraron datos válidos.");
-
-        // Poblar selector de misiones
-        const misiones = [...new Set(allData.map(d=>d.mision))].sort();
-        const sel = document.getElementById("filtro-mision");
-        sel.innerHTML = `<option value="">Todas</option>` + misiones.map(m=>`<option>${m}</option>`).join("");
-
-        document.getElementById("ultimo-update").textContent = "Actualizado: " + new Date().toLocaleString("es-CL");
+function cargar(){
+  document.getElementById("loading").style.display="block";
+  document.getElementById("error-msg").style.display="none";
+  document.querySelectorAll(".seccion").forEach(s=>s.classList.remove("activa"));
+  Papa.parse(CSV_URL,{
+    download:true,skipEmptyLines:true,
+    complete(results){
+      document.getElementById("loading").style.display="none";
+      try{
+        allData=parseRows(results);
+        if(!allData.length) throw new Error("No se encontraron datos válidos.");
+        const misiones=[...new Set(allData.map(d=>d.mision))].sort();
+        const sel=document.getElementById("filtro-mision");
+        sel.innerHTML=`<option value="">Todas</option>`+misiones.map(m=>`<option>${m}</option>`).join("");
+        document.getElementById("ultimo-update").textContent="Actualizado: "+new Date().toLocaleString("es-CL");
         mostrarVista("resumen");
-      } catch(e) {
-        mostrarError(e.message);
-      }
+      }catch(e){mostrarError(e.message);}
     },
-    error(e) {
-      document.getElementById("loading").style.display = "none";
-      mostrarError("No se pudo leer la hoja. Verifica que sea pública.");
+    error(){
+      document.getElementById("loading").style.display="none";
+      mostrarError("No se pudo leer la hoja. Verifica que esté compartida como pública.");
     }
   });
 }
 
-function mostrarError(msg) {
-  const el = document.getElementById("error-msg");
-  el.textContent = "⚠️ " + msg;
-  el.style.display = "block";
+function mostrarError(msg){
+  const el=document.getElementById("error-msg");
+  el.textContent="⚠️ "+msg;
+  el.style.display="block";
 }
 
-// ── Eventos ───────────────────────────────────
-document.querySelectorAll(".vistas button").forEach(b => b.addEventListener("click", () => mostrarVista(b.dataset.vista)));
-document.getElementById("filtro-mision").addEventListener("change", render);
-document.getElementById("filtro-desde").addEventListener("change", render);
-document.getElementById("filtro-hasta").addEventListener("change", render);
-document.getElementById("btn-limpiar").addEventListener("click", () => {
-  document.getElementById("filtro-desde").value = "";
-  render();
-});
-document.getElementById("btn-actualizar").addEventListener("click", cargar);
+document.querySelectorAll(".vistas button").forEach(b=>b.addEventListener("click",()=>mostrarVista(b.dataset.vista)));
+document.getElementById("filtro-mision").addEventListener("change",render);
+document.getElementById("filtro-fecha").addEventListener("change",render);
+document.getElementById("btn-limpiar").addEventListener("click",()=>{document.getElementById("filtro-fecha").value="";render();});
+document.getElementById("btn-actualizar").addEventListener("click",cargar);
 
 cargar();
 </script>
