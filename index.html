@@ -263,10 +263,10 @@ function render(){
         // Sin fecha: por mes sábado vs domingo lado a lado — TOTALES REALES
         document.getElementById("titulo-principal").textContent="Asistencia por Mes — Sábado vs Domingo";
         document.getElementById("subtitulo-principal").textContent="Total real de asistentes por mes según día";
-        const mapSab={}, mapDom={};
+        const cntSabMes={}, cntDomMes={};
         allData.filter(d=>d.mision==="La Florida").forEach(d=>{
-          if(d.esSab) mapSab[d.mes]=(mapSab[d.mes]||0)+d.total;
-          if(d.esDom) mapDom[d.mes]=(mapDom[d.mes]||0)+d.total;
+          if(d.esSab){ mapSab[d.mes]=(mapSab[d.mes]||0)+d.total; cntSabMes[d.mes]=(cntSabMes[d.mes]||0)+1; }
+          if(d.esDom){ mapDom[d.mes]=(mapDom[d.mes]||0)+d.total; cntDomMes[d.mes]=(cntDomMes[d.mes]||0)+1; }
         });
         charts["principal"]=new Chart(document.getElementById("chart-principal"),{
           type:"bar",
@@ -278,7 +278,12 @@ function render(){
             plugins:{
               legend:{position:"bottom"},
               tooltip:{callbacks:{
-                label:ctx=>`${ctx.dataset.label}: ${fmt(ctx.parsed.y)} asistentes`
+                label:ctx=>{
+                  const mes=meses[ctx.dataIndex].mes;
+                  const esSab=ctx.dataset.label==="Sábado";
+                  const cnt=esSab?(cntSabMes[mes]||0):(cntDomMes[mes]||0);
+                  return `${ctx.dataset.label}: ${fmt(ctx.parsed.y)} asistentes en ${cnt} reunión${cnt!==1?"es":""}`;
+                }
               }}
             }
           }
@@ -300,24 +305,31 @@ function render(){
       });
     }
 
-    // Pie — última reunión por misión
+    // Pie — última semana (lunes-domingo que contenga la fecha más reciente)
     destroyChart("pie");
     const ultFecha=[...new Set(allData.map(d=>d.fecha))].sort().pop();
-    const ultData=allData.filter(d=>d.fecha===ultFecha);
-    const pmUlt=[];
+    // Calcular lunes y domingo de esa semana
+    const ultD=new Date(ultFecha+"T12:00:00");
+    const dow=ultD.getDay(); // 0=dom,1=lun,...,6=sab
+    const diffLun=dow===0?-6:1-dow;
+    const lunes=new Date(ultD); lunes.setDate(ultD.getDate()+diffLun);
+    const domingo=new Date(lunes); domingo.setDate(lunes.getDate()+6);
+    const fmt8=d=>d.toISOString().slice(0,10);
+    const semanaInicio=fmt8(lunes), semanaFin=fmt8(domingo);
+    const ultData=allData.filter(d=>d.fecha>=semanaInicio&&d.fecha<=semanaFin);
     const mapUlt={};
     ultData.forEach(d=>{
       if(!mapUlt[d.mision]) mapUlt[d.mision]=0;
       mapUlt[d.mision]+=d.total;
     });
-    Object.entries(mapUlt).forEach(([mision,total])=>pmUlt.push({mision,total}));
-    pmUlt.sort((a,b)=>b.total-a.total);
+    const pmUlt=Object.entries(mapUlt).map(([mision,total])=>({mision,total})).sort((a,b)=>b.total-a.total);
+    const pieLabel=semanaInicio===semanaFin?`Semana del ${semanaInicio}`:`Semana ${semanaInicio} — ${semanaFin}`;
     charts["pie"]=new Chart(document.getElementById("chart-pie"),{
       type:"doughnut",
       data:{labels:pmUlt.map(m=>m.mision),datasets:[{data:pmUlt.map(m=>m.total),backgroundColor:COLORS}]},
       options:{responsive:true,plugins:{
         legend:{position:"right",labels:{font:{size:11}}},
-        title:{display:true,text:`Última reunión: ${ultFecha}`,font:{size:11},color:"#94a3b8"}
+        title:{display:true,text:pieLabel,font:{size:11},color:"#94a3b8"}
       }}
     });
 
