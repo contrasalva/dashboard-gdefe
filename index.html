@@ -91,7 +91,12 @@ tr:hover td{background:#f8fafc}
     <div class="charts-grid">
       <div class="chart-card" id="card-principal"><h2 id="titulo-principal"></h2><p class="subtitle" id="subtitulo-principal"></p><canvas id="chart-principal"></canvas></div>
       <div class="chart-card"><h2>Distribución por Misión</h2><canvas id="chart-pie"></canvas></div>
-      <div class="chart-card chart-full"><h2>Decisiones de Fe por Mes</h2><canvas id="chart-decisiones"></canvas></div>
+      <div class="chart-card chart-full"><h2>❤️ Decisiones de Fe por Misión y Mes</h2><p class="subtitle">Una línea por misión · Puntos = decisiones ese mes</p><canvas id="chart-decisiones" style="max-height:320px"></canvas></div>
+      <div class="chart-card chart-full" style="margin-top:0">
+        <h2>❤️ Tabla de Decisiones de Fe</h2>
+        <p class="subtitle">Total por misión y mes</p>
+        <div style="overflow-x:auto"><table id="tabla-decisiones" style="font-size:0.8rem;border-collapse:collapse;width:100%"><thead></thead><tbody></tbody></table></div>
+      </div>
     </div>
   </div>
 </main>
@@ -311,13 +316,55 @@ function render(){
       }}
     });
 
-    // Decisiones
+    // Decisiones por misión — una línea por misión
     destroyChart("deci");
+    const todosMesesDeci=[...new Set(allData.map(d=>d.mes))].sort();
+    const labelsDeci=todosMesesDeci.map(m=>mesLabel(m));
+    const misionesDeci=[...new Set(allData.map(d=>d.mision))].sort();
+    const deciPorMision={};
+    allData.forEach(d=>{
+      if(!deciPorMision[d.mision]) deciPorMision[d.mision]={};
+      if(!deciPorMision[d.mision][d.mes]) deciPorMision[d.mision][d.mes]=0;
+      deciPorMision[d.mision][d.mes]+=d.deci;
+    });
     charts["deci"]=new Chart(document.getElementById("chart-decisiones"),{
       type:"line",
-      data:{labels,datasets:[{label:"Decisiones de Fe",data:meses.map(m=>m.deci),borderColor:"#ef4444",backgroundColor:"rgba(239,68,68,.1)",fill:true,tension:.3,pointRadius:5}]},
-      options:{responsive:true,plugins:{legend:{display:false}}}
+      data:{labels:labelsDeci,datasets:misionesDeci.map((mis,i)=>({
+        label:mis,
+        data:todosMesesDeci.map(m=>deciPorMision[mis]&&deciPorMision[mis][m]?deciPorMision[mis][m]:null),
+        borderColor:COLORS[i%COLORS.length],
+        backgroundColor:"transparent",
+        tension:.4,pointRadius:4,borderWidth:2,
+        spanGaps:false
+      }))},
+      options:{responsive:true,plugins:{legend:{position:"bottom",labels:{font:{size:11},boxWidth:12}}},
+        scales:{y:{beginAtZero:true,ticks:{stepSize:1}}}}
     });
+
+    // Tabla decisiones por misión x mes
+    const thMeses=todosMesesDeci.map(m=>`<th style="text-align:center;white-space:nowrap">${mesLabel(m)}</th>`).join("");
+    document.querySelector("#tabla-decisiones thead").innerHTML=`<tr><th>Misión</th>${thMeses}<th style="text-align:center">Total</th></tr>`;
+    // Totales por mes para fila final
+    const totalesMes={};
+    todosMesesDeci.forEach(m=>totalesMes[m]=0);
+    const tbodyRows=misionesDeci.map((mis,i)=>{
+      let totalMis=0;
+      const celdas=todosMesesDeci.map(m=>{
+        const v=deciPorMision[mis]&&deciPorMision[mis][m]?deciPorMision[mis][m]:0;
+        totalesMes[m]+=v; totalMis+=v;
+        const bg=v>0?`background:rgba(239,68,68,${Math.min(0.08+v*0.08,0.55)});color:#b91c1c;font-weight:600`:"color:#cbd5e1";
+        return `<td style="text-align:center;${bg}">${v||"·"}</td>`;
+      }).join("");
+      return `<tr><td><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${COLORS[i%COLORS.length]};margin-right:6px"></span><strong>${mis}</strong></td>${celdas}<td style="text-align:center;font-weight:700;color:#b91c1c">${totalMis||"·"}</td></tr>`;
+    });
+    // Fila total
+    let granTotal=0;
+    const filaTotales=todosMesesDeci.map(m=>{
+      granTotal+=totalesMes[m];
+      return `<td style="text-align:center;font-weight:700;color:#b91c1c;border-top:2px solid #fecaca">${totalesMes[m]||"·"}</td>`;
+    }).join("");
+    tbodyRows.push(`<tr style="background:#fff1f2"><td><strong>Total</strong></td>${filaTotales}<td style="text-align:center;font-weight:800;color:#b91c1c;border-top:2px solid #fecaca">${granTotal}</td></tr>`);
+    document.querySelector("#tabla-decisiones tbody").innerHTML=tbodyRows.join("");
   }
 }
 
