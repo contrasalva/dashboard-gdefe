@@ -47,16 +47,13 @@ tr:hover td{background:#f8fafc}
 .seccion{display:none}
 .seccion.activa{display:block}
 @media(max-width:600px){.charts-grid{grid-template-columns:1fr}}
-.ranking-row{display:flex;align-items:center;gap:10px;padding:10px 4px;border-bottom:1px solid #f1f5f9;cursor:pointer;border-radius:8px;transition:background .15s}
-.ranking-row:hover{background:#f8fafc}
-.ranking-row:last-child{border-bottom:none}
-.ranking-num{font-size:0.78rem;font-weight:700;color:#94a3b8;width:22px;text-align:right;flex-shrink:0}
-.ranking-nombre{font-size:0.85rem;font-weight:600;color:#334155;width:130px;flex-shrink:0}
-.ranking-bar-wrap{flex:1;background:#f1f5f9;border-radius:6px;height:14px;overflow:hidden}
-.ranking-bar{height:100%;border-radius:6px;transition:width .5s ease}
-.ranking-valor{font-size:0.82rem;font-weight:700;color:#6366f1;width:52px;text-align:right;flex-shrink:0}
-.ranking-ult{font-size:0.72rem;color:#94a3b8;width:110px;text-align:right;flex-shrink:0}
-.ranking-row.selected{background:#eef2ff}
+.heatmap-table{border-collapse:separate;border-spacing:3px;font-size:0.78rem;min-width:600px}
+.heatmap-table th{padding:5px 8px;font-size:0.7rem;color:#64748b;font-weight:600;text-transform:uppercase;white-space:nowrap;text-align:center}
+.heatmap-table td.mision-label{font-weight:600;color:#334155;font-size:0.82rem;padding:5px 10px 5px 0;white-space:nowrap;cursor:pointer}
+.heatmap-table td.mision-label:hover{color:#6366f1;text-decoration:underline}
+.hm-cell{width:52px;height:36px;border-radius:6px;text-align:center;vertical-align:middle;font-size:0.75rem;font-weight:600;cursor:default;transition:transform .1s}
+.hm-cell:hover{transform:scale(1.08);z-index:1;position:relative}
+.hm-cell.sin-dato{background:#f1f5f9;color:#cbd5e1}
 .badge-crecimiento{display:inline-block;font-size:0.7rem;font-weight:700;padding:2px 7px;border-radius:20px;margin-left:6px}
 .badge-up{background:#dcfce7;color:#166534}
 .badge-down{background:#fee2e2;color:#991b1b}
@@ -121,7 +118,11 @@ tr:hover td{background:#f8fafc}
 
   <div class="seccion" id="sec-misiones">
     <div class="charts-grid" style="margin-bottom:20px">
-      <div class="chart-card chart-full"><h2>Ranking de Misiones — Adultos (acumulado)</h2><p class="subtitle">Haz clic en una misión para ver su evolución mensual</p><div id="ranking-misiones"></div></div>
+      <div class="chart-card chart-full">
+        <h2>Mapa de Calor — Adultos por Misión y Mes</h2>
+        <p class="subtitle">Haz clic en una misión para ver su evolución · Más oscuro = más asistencia</p>
+        <div style="overflow-x:auto"><div id="heatmap-misiones"></div></div>
+      </div>
     </div>
     <div class="charts-grid" style="margin-bottom:20px">
       <div class="chart-card chart-full" id="card-evolucion" style="display:none">
@@ -459,20 +460,45 @@ function render(){
 
   if(vistaActual==="misiones"){
     const pm=agruparMision(allData);
-    const maxAdultosMis=pm[0]?pm[0].adultos:1;
 
-    // Ranking con barras de progreso
-    const rankEl=document.getElementById("ranking-misiones");
-    rankEl.innerHTML=pm.map((m,i)=>{
-      const pct=Math.round(m.adultos/maxAdultosMis*100);
-      return `<div class="ranking-row" data-mision="${m.mision}" onclick="mostrarEvolucion('${m.mision.replace(/'/g,"\\'")}')">
-        <span class="ranking-num">${i+1}</span>
-        <span class="ranking-nombre">${m.mision}</span>
-        <div class="ranking-bar-wrap"><div class="ranking-bar" style="width:${pct}%;background:${COLORS[i%COLORS.length]}"></div></div>
-        <span class="ranking-valor">${fmt(m.adultos)}</span>
-        <span class="ranking-ult">ult: ${m.ultimaFecha}</span>
-      </div>`;
-    }).join("");
+    // Mapa de calor misiones x meses
+    const todosMesesHM=[...new Set(allData.map(d=>d.mes))].sort();
+    const heatMap={};
+    allData.forEach(d=>{
+      if(!heatMap[d.mision]) heatMap[d.mision]={};
+      if(!heatMap[d.mision][d.mes]) heatMap[d.mision][d.mes]=0;
+      heatMap[d.mision][d.mes]+=d.adultos;
+    });
+    let hmMax=0;
+    Object.values(heatMap).forEach(m=>Object.values(m).forEach(v=>{if(v>hmMax)hmMax=v;}));
+    const hmColor=(v)=>{
+      const t=Math.pow(v/hmMax,0.55);
+      const ri=Math.round(220-(220-80)*t);
+      const gi=Math.round(225-(225-90)*t);
+      const bi=Math.round(255-(255-200)*t);
+      return `rgb(${ri},${gi},${bi})`;
+    };
+    const misionesHM=pm.map(m=>m.mision);
+    const hmEl=document.getElementById("heatmap-misiones");
+    hmEl.innerHTML=`<table class="heatmap-table">
+      <thead><tr>
+        <th style="text-align:left">Misi\u00f3n</th>
+        ${todosMesesHM.map(m=>`<th>${mesLabel(m)}</th>`).join("")}
+      </tr></thead>
+      <tbody>
+        ${misionesHM.map(mision=>`<tr>
+          <td class="mision-label" onclick="mostrarEvolucion('${mision.replace(/'/g,"\\'")}')">\u2192 ${mision}</td>
+          ${todosMesesHM.map(mes=>{
+            const v=heatMap[mision]&&heatMap[mision][mes]?heatMap[mision][mes]:0;
+            if(!v) return '<td class="hm-cell sin-dato" title="Sin datos">\u00b7</td>';
+            const bg=hmColor(v);
+            const t=Math.pow(v/hmMax,0.55);
+            const txtColor=t>0.45?'white':'#334155';
+            return `<td class="hm-cell" style="background:${bg};color:${txtColor}" title="${mision} \u00b7 ${mes}: ${v} adultos">${v}</td>`;
+          }).join("")}
+        </tr>`).join("")}
+      </tbody>
+    </table>`; 
 
     // Tabla detalle
     document.querySelector("#tabla-misiones tbody").innerHTML=pm.map((m,i)=>`<tr>
