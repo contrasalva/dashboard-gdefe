@@ -260,11 +260,11 @@ function render(){
           }}
         });
       } else {
-        // Sin fecha: por mes sábado vs domingo lado a lado
+        // Sin fecha: por mes sábado vs domingo lado a lado — TOTALES REALES
         document.getElementById("titulo-principal").textContent="Asistencia por Mes — Sábado vs Domingo";
-        document.getElementById("subtitulo-principal").textContent="Total de asistentes por mes según día";
+        document.getElementById("subtitulo-principal").textContent="Total real de asistentes por mes según día";
         const mapSab={}, mapDom={};
-        data.filter(d=>d.mision==="La Florida").forEach(d=>{
+        allData.filter(d=>d.mision==="La Florida").forEach(d=>{
           if(d.esSab) mapSab[d.mes]=(mapSab[d.mes]||0)+d.total;
           if(d.esDom) mapDom[d.mes]=(mapDom[d.mes]||0)+d.total;
         });
@@ -293,13 +293,25 @@ function render(){
       });
     }
 
-    // Pie
+    // Pie — última reunión por misión
     destroyChart("pie");
-    const pm=agruparMision();
+    const ultFecha=[...new Set(allData.map(d=>d.fecha))].sort().pop();
+    const ultData=allData.filter(d=>d.fecha===ultFecha);
+    const pmUlt=[];
+    const mapUlt={};
+    ultData.forEach(d=>{
+      if(!mapUlt[d.mision]) mapUlt[d.mision]=0;
+      mapUlt[d.mision]+=d.total;
+    });
+    Object.entries(mapUlt).forEach(([mision,total])=>pmUlt.push({mision,total}));
+    pmUlt.sort((a,b)=>b.total-a.total);
     charts["pie"]=new Chart(document.getElementById("chart-pie"),{
       type:"doughnut",
-      data:{labels:pm.map(m=>m.mision),datasets:[{data:pm.map(m=>m.total),backgroundColor:COLORS}]},
-      options:{responsive:true,plugins:{legend:{position:"right",labels:{font:{size:11}}}}}
+      data:{labels:pmUlt.map(m=>m.mision),datasets:[{data:pmUlt.map(m=>m.total),backgroundColor:COLORS}]},
+      options:{responsive:true,plugins:{
+        legend:{position:"right",labels:{font:{size:11}}},
+        title:{display:true,text:`Última reunión: ${ultFecha}`,font:{size:11},color:"#94a3b8"}
+      }}
     });
 
     // Decisiones
