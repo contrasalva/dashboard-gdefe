@@ -196,19 +196,33 @@ function agruparMision(){
 function destroyChart(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
 
 function renderKPIs(data){
-  const t={adultos:0,visitas:0,ninos:0,ninosV:0,deci:0};
-  data.forEach(d=>{t.adultos+=d.adultos;t.visitas+=d.visitas;t.ninos+=d.ninos;t.ninosV+=d.ninosV;t.deci+=d.deci;});
   const fecha=document.getElementById("filtro-fecha").value;
-  const n=data.length||1;
-  const esProm=!fecha&&n>1;
-  const div=esProm?n:1;
-  const sub=esProm?`<div class="kpi-sub">promedio por reunión (${n} reuniones)</div>`:`<div class="kpi-sub">total de la fecha</div>`;
+  const mision=document.getElementById("filtro-mision").value;
+  let kpiData=data;
+  let sub="";
+
+  if(!fecha && !mision){
+    // Última fecha global con datos
+    const ultFecha=[...new Set(allData.map(d=>d.fecha))].sort().pop();
+    kpiData=allData.filter(d=>d.fecha===ultFecha);
+    sub=`<div class="kpi-sub">última reunión: ${ultFecha}</div>`;
+  } else if(!fecha && mision){
+    // Última fecha de esa misión
+    const ultFecha=[...new Set(data.map(d=>d.fecha))].sort().pop();
+    kpiData=data.filter(d=>d.fecha===ultFecha);
+    sub=`<div class="kpi-sub">última reunión: ${ultFecha}</div>`;
+  } else {
+    sub=`<div class="kpi-sub">fecha seleccionada: ${fecha}</div>`;
+  }
+
+  const t={adultos:0,visitas:0,ninos:0,ninosV:0,deci:0};
+  kpiData.forEach(d=>{t.adultos+=d.adultos;t.visitas+=d.visitas;t.ninos+=d.ninos;t.ninosV+=d.ninosV;t.deci+=d.deci;});
   document.getElementById("kpis").innerHTML=[
-    {icon:"👥",label:"Asistencia Adultos",val:fmt(Math.round(t.adultos/div))},
-    {icon:"🙋",label:"Visitas Adultos",val:fmt(Math.round(t.visitas/div))},
-    {icon:"👶",label:"Asistencia Niños",val:fmt(Math.round(t.ninos/div))},
-    {icon:"🧒",label:"Visitas Niños",val:fmt(Math.round(t.ninosV/div))},
-    {icon:"❤️",label:"Decisiones de Fe",val:fmt(Math.round(t.deci/div))},
+    {icon:"👥",label:"Asistencia Adultos",val:fmt(t.adultos)},
+    {icon:"🙋",label:"Visitas Adultos",val:fmt(t.visitas)},
+    {icon:"👶",label:"Asistencia Niños",val:fmt(t.ninos)},
+    {icon:"🧒",label:"Visitas Niños",val:fmt(t.ninosV)},
+    {icon:"❤️",label:"Decisiones de Fe",val:fmt(t.deci)},
   ].map(k=>`<div class="kpi-card"><div class="icon">${k.icon}</div><div class="label">${k.label}</div><div class="value">${k.val}</div>${sub}</div>`).join("");
 }
 
@@ -229,26 +243,40 @@ function render(){
     // Gráfico principal
     destroyChart("principal");
     if(esLF){
-      document.getElementById("titulo-principal").textContent="Asistencia Real por Fecha — La Florida";
-      document.getElementById("subtitulo-principal").textContent="Cada barra es una reunión · Amarillo = sábado · Azul = domingo";
-      // datos ordenados por fecha
-      const lf=data.filter(d=>d.mision==="La Florida").sort((a,b)=>a.fecha.localeCompare(b.fecha));
-      charts["principal"]=new Chart(document.getElementById("chart-principal"),{
-        type:"bar",
-        data:{
-          labels:lf.map(d=>d.fecha.slice(5)), // MM-DD
-          datasets:[{
-            label:"Asistencia",
-            data:lf.map(d=>d.total),
-            backgroundColor:lf.map(d=>d.esSab?"#f59e0b":"#6366f1"),
-            borderRadius:3,
-          }]
-        },
-        options:{responsive:true,plugins:{
-          legend:{display:false},
-          tooltip:{callbacks:{title:t=>{const d=lf[t[0].dataIndex];return `${d.fecha} (${d.esSab?"Sábado":"Domingo"})`;}}}
-        }}
-      });
+      const fecha=document.getElementById("filtro-fecha").value;
+      if(fecha){
+        // Con fecha: barras por reunión de ese día
+        document.getElementById("titulo-principal").textContent="Asistencia Real por Fecha — La Florida";
+        document.getElementById("subtitulo-principal").textContent="Cada barra es una reunión · Amarillo = sábado · Azul = domingo";
+        const lf=data.filter(d=>d.mision==="La Florida").sort((a,b)=>a.fecha.localeCompare(b.fecha));
+        charts["principal"]=new Chart(document.getElementById("chart-principal"),{
+          type:"bar",
+          data:{
+            labels:lf.map(d=>d.fecha.slice(5)),
+            datasets:[{label:"Asistencia",data:lf.map(d=>d.total),backgroundColor:lf.map(d=>d.esSab?"#f59e0b":"#6366f1"),borderRadius:3}]
+          },
+          options:{responsive:true,plugins:{legend:{display:false},
+            tooltip:{callbacks:{title:t=>{const d=lf[t[0].dataIndex];return `${d.fecha} (${d.esSab?"Sábado":"Domingo"})`;}}}
+          }}
+        });
+      } else {
+        // Sin fecha: por mes sábado vs domingo lado a lado
+        document.getElementById("titulo-principal").textContent="Asistencia por Mes — Sábado vs Domingo";
+        document.getElementById("subtitulo-principal").textContent="Total de asistentes por mes según día";
+        const mapSab={}, mapDom={};
+        data.filter(d=>d.mision==="La Florida").forEach(d=>{
+          if(d.esSab) mapSab[d.mes]=(mapSab[d.mes]||0)+d.total;
+          if(d.esDom) mapDom[d.mes]=(mapDom[d.mes]||0)+d.total;
+        });
+        charts["principal"]=new Chart(document.getElementById("chart-principal"),{
+          type:"bar",
+          data:{labels,datasets:[
+            {label:"Sábado",data:meses.map(m=>mapSab[m.mes]||0),backgroundColor:"#f59e0b",borderRadius:4},
+            {label:"Domingo",data:meses.map(m=>mapDom[m.mes]||0),backgroundColor:"#6366f1",borderRadius:4},
+          ]},
+          options:{responsive:true,plugins:{legend:{position:"bottom"}}}
+        });
+      }
     } else {
       document.getElementById("titulo-principal").textContent="Asistencia por Mes";
       document.getElementById("subtitulo-principal").textContent="Barras = totales · Línea roja = promedio por reunión";
