@@ -94,11 +94,6 @@ tr:hover td{background:#f8fafc}
       <div class="chart-card chart-full"><h2>Decisiones de Fe por Mes</h2><canvas id="chart-decisiones"></canvas></div>
     </div>
   </div>
-    <div class="charts-grid">
-      <div class="chart-card chart-full" id="card-sabdom" style="display:none"><h2>Tendencia Sábado vs Domingo — La Florida</h2><p class="subtitle">Promedio de asistentes por reunión según día</p><canvas id="chart-sabdom"></canvas></div>
-      <div class="chart-card chart-full"><h2>Tendencia General — Adultos</h2><p class="subtitle" id="tend-subtitle"></p><canvas id="chart-tendencia" style="max-height:300px"></canvas></div>
-    </div>
-  </div>
 </main>
 
 <script>
@@ -214,7 +209,6 @@ function render(){
 
   // warnings
   document.getElementById("warning-florida").style.display=esLF?"flex":"none";
-  document.getElementById("warning-florida-t").style.display=esLF?"flex":"none";
 
   renderKPIs(data);
   const meses=agruparMes(data,esLF);
