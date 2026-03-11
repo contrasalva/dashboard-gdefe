@@ -198,7 +198,7 @@ function filtrar(){
 
 function agruparMes(data,esLF){
   const map={},cnt={},cntS={},cntD={},sumS={},sumD={};
-  const meses=[...new Set(allData.map(d=>d.mes))].sort();
+  const meses=[...new Set(data.map(d=>d.mes))].sort();
   data.forEach(d=>{
     if(!map[d.mes]){map[d.mes]={mes:d.mes,adultos:0,visitas:0,ninos:0,ninosV:0,deci:0,total:0};cnt[d.mes]=0;cntS[d.mes]=0;cntD[d.mes]=0;sumS[d.mes]=0;sumD[d.mes]=0;}
     map[d.mes].adultos+=d.adultos;map[d.mes].visitas+=d.visitas;map[d.mes].ninos+=d.ninos;
