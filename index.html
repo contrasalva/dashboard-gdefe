@@ -76,8 +76,6 @@ tr:hover td{background:#f8fafc}
 
 <div class="vistas">
   <button class="active" data-vista="resumen">📊 Resumen</button>
-  <button data-vista="tendencia">📈 Tendencia</button>
-  <button data-vista="misiones">🗺️ Por Misión</button>
 </div>
 
 <main>
@@ -96,35 +94,9 @@ tr:hover td{background:#f8fafc}
       <div class="chart-card chart-full"><h2>Decisiones de Fe por Mes</h2><canvas id="chart-decisiones"></canvas></div>
     </div>
   </div>
-
-  <div class="seccion" id="sec-tendencia">
-    <div id="warning-florida-t" class="warning" style="display:none">
-      <span style="font-size:1.2rem">⚠️</span>
-      <div><strong>Posible duplicidad de asistentes — La Florida</strong>Esta misión realiza reuniones el sábado y domingo. Algunas personas podrían asistir ambos días, por lo que los totales pueden estar sobreestimados.</div>
-    </div>
     <div class="charts-grid">
       <div class="chart-card chart-full" id="card-sabdom" style="display:none"><h2>Tendencia Sábado vs Domingo — La Florida</h2><p class="subtitle">Promedio de asistentes por reunión según día</p><canvas id="chart-sabdom"></canvas></div>
       <div class="chart-card chart-full"><h2>Tendencia General — Adultos</h2><p class="subtitle" id="tend-subtitle"></p><canvas id="chart-tendencia" style="max-height:300px"></canvas></div>
-    </div>
-  </div>
-
-  <div class="seccion" id="sec-misiones">
-    </div>
-    <div class="charts-grid" style="margin-bottom:20px">
-      <div class="chart-card chart-full" id="card-evolucion" style="display:none">
-        <h2 id="titulo-evolucion"></h2>
-        <p class="subtitle">Adultos por mes</p>
-        <canvas id="chart-evolucion" style="max-height:260px"></canvas>
-      </div>
-    </div>
-    <div class="chart-card"><h2>Detalle por Misión</h2><div style="overflow-x:auto"><table id="tabla-misiones"><thead><tr><th>Misión</th><th>Decisiones de Fe</th></tr></thead><tbody></tbody></table></div></div>
-    <div class="chart-card" style="margin-top:20px">
-      <h2>Tendencia por Misión</h2>
-      <p class="subtitle" id="subtitulo-tendencia-mis"></p>
-      <div style="overflow-x:auto"><table id="tabla-tendencia-mis">
-        <thead><tr><th>Misión</th><th>Prom. 3 meses anteriores</th><th>Prom. 3 meses recientes</th><th>Cambio</th><th>Tendencia</th></tr></thead>
-        <tbody></tbody>
-      </table></div>
     </div>
   </div>
 </main>
@@ -201,20 +173,6 @@ function agruparMes(data,esLF){
   });
 }
 
-function agruparMision(data){
-  data=data||allData;
-  const map={},cnt={},ultFecha={};
-  data.forEach(d=>{
-    if(!map[d.mision]){map[d.mision]={mision:d.mision,adultos:0,ninos:0,visitas:0,ninosV:0,deci:0,total:0};cnt[d.mision]=0;}
-    map[d.mision].adultos+=d.adultos;map[d.mision].ninos+=d.ninos;map[d.mision].visitas+=d.visitas;
-    map[d.mision].ninosV+=d.ninosV;map[d.mision].deci+=d.deci;map[d.mision].total+=d.total;cnt[d.mision]++;
-    if(!ultFecha[d.mision]||d.fecha>ultFecha[d.mision]) ultFecha[d.mision]=d.fecha;
-  });
-  return Object.values(map).map(m=>({...m,
-    promedio:cnt[m.mision]?Math.round(m.adultos/cnt[m.mision]):0,
-    ultimaFecha:ultFecha[m.mision]||"—"
-  })).sort((a,b)=>b.adultos-a.adultos);
-}
 
 function destroyChart(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
 
@@ -367,149 +325,8 @@ function render(){
       options:{responsive:true,plugins:{legend:{display:false}}}
     });
   }
-
-  if(vistaActual==="tendencia"){
-    // Sáb vs Dom solo La Florida
-    const cardSD=document.getElementById("card-sabdom");
-    cardSD.style.display=esLF?"block":"none";
-    if(esLF){
-      destroyChart("sabdom");
-      charts["sabdom"]=new Chart(document.getElementById("chart-sabdom"),{
-        type:"line",
-        data:{labels,datasets:[
-          {label:"Prom. Sábado",data:meses.map(m=>m.promSab),borderColor:"#f59e0b",borderWidth:2.5,pointRadius:4,tension:.3},
-          {label:"Prom. Domingo",data:meses.map(m=>m.promDom),borderColor:"#6366f1",borderWidth:2.5,pointRadius:4,tension:.3},
-        ]},
-        options:{responsive:true,plugins:{legend:{position:"bottom"}}}
-      });
-    }
-
-    // Calcular mes con mayor total de adultos
-    const maxAdultos=Math.max(...meses.map(m=>m.adultos));
-
-    // Calcular % crecimiento mes a mes
-    const crecimientos=meses.map((m,i)=>{
-      if(i===0) return null;
-      const prev=meses[i-1].adultos;
-      if(!prev) return null;
-      return Math.round((m.adultos-prev)/prev*100);
-    });
-
-    destroyChart("tend");
-    charts["tend"]=new Chart(document.getElementById("chart-tendencia"),{
-      type:"line",
-      data:{labels,datasets:[
-        {label:"Adultos",data:meses.map(m=>m.adultos),borderColor:"#6366f1",backgroundColor:"rgba(99,102,241,.08)",fill:true,tension:.3,pointRadius:5,borderWidth:2.5,
-          pointBackgroundColor:meses.map(m=>m.adultos===maxAdultos?"#f59e0b":"#6366f1"),
-          pointRadius:meses.map(m=>m.adultos===maxAdultos?8:4)},
-        {label:"Visitas Adultos",data:meses.map(m=>m.visitas),borderColor:"#22c55e",tension:.3,pointRadius:3,borderWidth:2},
-      ]},
-      options:{responsive:true,
-        plugins:{
-          legend:{position:"bottom"},
-          tooltip:{callbacks:{
-            afterLabel:ctx=>{
-              if(ctx.datasetIndex!==0) return;
-              const c=crecimientos[ctx.dataIndex];
-              if(c===null) return "";
-              return c>0?`▲ +${c}% vs mes anterior`:c<0?`▼ ${c}% vs mes anterior`:`= sin cambio`;
-            }
-          }}
-        }
-      }
-    });
-    document.getElementById("tend-subtitle").textContent=`Punto naranja = mes con mayor asistencia · Tooltip muestra % vs mes anterior`;
-
-  }
-
-  if(vistaActual==="misiones"){
-    const pm=agruparMision(allData);
-
-    // Tabla detalle
-    document.querySelector("#tabla-misiones tbody").innerHTML=pm.map((m,i)=>`<tr>
-      <td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${COLORS[i%COLORS.length]};margin-right:6px"></span><strong>${m.mision}</strong></td>
-      <td style="color:#b91c1c;font-weight:700;font-size:1rem">❤️ ${fmt(m.deci)}</td>
-    </tr>`).join("");
-
-    // Tabla tendencia: últimos 3 meses vs 3 anteriores por misión
-    const todosMeses=[...new Set(allData.map(d=>d.mes))].sort();
-    const totalMeses=todosMeses.length;
-    const mesesRecientes=todosMeses.slice(-3);
-    const mesesAnteriores=todosMeses.slice(-6,-3);
-    const tieneAnteriores=mesesAnteriores.length>0;
-    document.getElementById("subtitulo-tendencia-mis").textContent=
-      tieneAnteriores
-        ? `Comparando ${mesesAnteriores[0]} — ${mesesAnteriores[mesesAnteriores.length-1]} vs ${mesesRecientes[0]} — ${mesesRecientes[mesesRecientes.length-1]}`
-        : "Insuficientes datos para comparar períodos (se necesitan al menos 4 meses)";
-
-    const tendRows = pm.map(m => {
-      const porMes = {};
-      allData.filter(d=>d.mision===m.mision).forEach(d=>{
-        if(!porMes[d.mes]){porMes[d.mes]={total:0,cnt:0};}
-        porMes[d.mes].total+=d.adultos; porMes[d.mes].cnt++;
-      });
-      const promPeriodo = meses => {
-        const vals = meses.map(mes => porMes[mes] ? porMes[mes].total/porMes[mes].cnt : null).filter(v=>v!==null);
-        return vals.length ? Math.round(vals.reduce((a,b)=>a+b,0)/vals.length) : null;
-      };
-      const pReciente = promPeriodo(mesesRecientes);
-      const pAnterior = promPeriodo(mesesAnteriores);
-      return {mision:m.mision, pReciente, pAnterior};
-    });
-
-    document.querySelector("#tabla-tendencia-mis tbody").innerHTML=tendRows.map((m,i)=>{
-      if(m.pReciente===null) return "";
-      let flecha="", color="#64748b", cambioTxt="—";
-      if(m.pAnterior!==null && m.pAnterior>0){
-        const diff=m.pReciente-m.pAnterior;
-        const pct=Math.round(diff/m.pAnterior*100);
-        cambioTxt=`${diff>0?"+":""}${pct}%`;
-        if(pct>=5){flecha="▲ Subiendo";color="#16a34a";}
-        else if(pct<=-5){flecha="▼ Bajando";color="#dc2626";}
-        else{flecha="● Estable";color="#d97706";}
-      } else { flecha="— Sin dato anterior"; color="#94a3b8"; }
-      return `<tr>
-        <td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${COLORS[i%COLORS.length]};margin-right:6px"></span><strong>${m.mision}</strong></td>
-        <td style="text-align:center">${m.pAnterior!==null?`~${m.pAnterior}`:"—"}</td>
-        <td style="text-align:center;font-weight:600">~${m.pReciente}</td>
-        <td style="text-align:center;font-weight:700;color:${color}">${cambioTxt}</td>
-        <td style="font-weight:600;color:${color}">${flecha}</td>
-      </tr>`;
-    }).join("");
-  }
 }
 
-function mostrarEvolucion(mision){
-  // Destacar fila seleccionada en ranking
-  document.querySelectorAll(".ranking-row").forEach(r=>{
-    r.classList.toggle("selected",r.dataset.mision===mision);
-  });
-  // Datos por mes para esa misión
-  const datosMision=allData.filter(d=>d.mision===mision);
-  const mesesUnicos=[...new Set(allData.map(d=>d.mes))].sort();
-  const mapMes={};
-  datosMision.forEach(d=>{
-    if(!mapMes[d.mes]) mapMes[d.mes]={adultos:0,visitas:0};
-    mapMes[d.mes].adultos+=d.adultos;
-    mapMes[d.mes].visitas+=d.visitas;
-  });
-  const labelsEv=mesesUnicos.map(m=>mesLabel(m));
-  const datosAdultos=mesesUnicos.map(m=>mapMes[m]?mapMes[m].adultos:null);
-  const datosVisitas=mesesUnicos.map(m=>mapMes[m]?mapMes[m].visitas:null);
-
-  document.getElementById("card-evolucion").style.display="block";
-  document.getElementById("titulo-evolucion").textContent=`Evolución mensual — ${mision}`;
-  destroyChart("evolucion");
-  charts["evolucion"]=new Chart(document.getElementById("chart-evolucion"),{
-    type:"line",
-    data:{labels:labelsEv,datasets:[
-      {label:"Adultos",data:datosAdultos,borderColor:"#6366f1",backgroundColor:"rgba(99,102,241,.1)",fill:true,tension:.3,pointRadius:4,spanGaps:true},
-      {label:"Visitas",data:datosVisitas,borderColor:"#22c55e",tension:.3,pointRadius:3,spanGaps:true},
-    ]},
-    options:{responsive:true,plugins:{legend:{position:"bottom"}},
-      scales:{y:{beginAtZero:true}}}
-  });
-}
 
 function mostrarVista(v){
   vistaActual=v;
