@@ -305,31 +305,34 @@ function render(){
       });
     }
 
-    // Pie — última semana (lunes-domingo que contenga la fecha más reciente)
+    // Pie — adultos de la última reunión por misión; La Florida separada en Sáb/Dom
     destroyChart("pie");
-    const ultFecha=[...new Set(allData.map(d=>d.fecha))].sort().pop();
-    // Calcular lunes y domingo de esa semana
-    const ultD=new Date(ultFecha+"T12:00:00");
-    const dow=ultD.getDay(); // 0=dom,1=lun,...,6=sab
-    const diffLun=dow===0?-6:1-dow;
-    const lunes=new Date(ultD); lunes.setDate(ultD.getDate()+diffLun);
-    const domingo=new Date(lunes); domingo.setDate(lunes.getDate()+6);
-    const fmt8=d=>d.toISOString().slice(0,10);
-    const semanaInicio=fmt8(lunes), semanaFin=fmt8(domingo);
-    const ultData=allData.filter(d=>d.fecha>=semanaInicio&&d.fecha<=semanaFin);
-    const mapUlt={};
-    ultData.forEach(d=>{
-      if(!mapUlt[d.mision]) mapUlt[d.mision]=0;
-      mapUlt[d.mision]+=d.total;
+    const mapUltFecha={};
+    allData.forEach(d=>{
+      if(d.mision==="La Florida") return;
+      if(!mapUltFecha[d.mision]||d.fecha>mapUltFecha[d.mision]) mapUltFecha[d.mision]=d.fecha;
     });
-    const pmUlt=Object.entries(mapUlt).map(([mision,total])=>({mision,total})).sort((a,b)=>b.total-a.total);
-    const pieLabel=semanaInicio===semanaFin?`Semana del ${semanaInicio}`:`Semana ${semanaInicio} — ${semanaFin}`;
+    const pmUlt=[];
+    Object.entries(mapUltFecha).forEach(([mision,fecha])=>{
+      const filas=allData.filter(d=>d.mision===mision&&d.fecha===fecha);
+      const adultos=filas.reduce((s,d)=>s+d.adultos,0);
+      if(adultos>0) pmUlt.push({mision,adultos,fecha});
+    });
+    const lfData=allData.filter(d=>d.mision==="La Florida");
+    const ultSab=lfData.filter(d=>d.esSab).sort((a,b)=>b.fecha.localeCompare(a.fecha))[0];
+    const ultDom=lfData.filter(d=>d.esDom).sort((a,b)=>b.fecha.localeCompare(a.fecha))[0];
+    if(ultSab) pmUlt.push({mision:"La Fl. Sábado",adultos:ultSab.adultos,fecha:ultSab.fecha});
+    if(ultDom) pmUlt.push({mision:"La Fl. Domingo",adultos:ultDom.adultos,fecha:ultDom.fecha});
+    pmUlt.sort((a,b)=>b.adultos-a.adultos);
+    const fechasPie=[...new Set(pmUlt.map(m=>m.fecha))].sort();
+    const pieLabel=fechasPie.length===1?`Última reunión: ${fechasPie[0]}`:`Últimas reuniones: ${fechasPie[0]} — ${fechasPie[fechasPie.length-1]}`;
     charts["pie"]=new Chart(document.getElementById("chart-pie"),{
       type:"doughnut",
-      data:{labels:pmUlt.map(m=>m.mision),datasets:[{data:pmUlt.map(m=>m.total),backgroundColor:COLORS}]},
+      data:{labels:pmUlt.map(m=>m.mision),datasets:[{data:pmUlt.map(m=>m.adultos),backgroundColor:COLORS}]},
       options:{responsive:true,plugins:{
         legend:{position:"right",labels:{font:{size:11}}},
-        title:{display:true,text:pieLabel,font:{size:11},color:"#94a3b8"}
+        title:{display:true,text:pieLabel,font:{size:11},color:"#94a3b8"},
+        tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${ctx.parsed} adultos`}}
       }}
     });
 
