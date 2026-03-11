@@ -328,17 +328,17 @@ function render(){
       deciPorMision[d.mision][d.mes]+=d.deci;
     });
     charts["deci"]=new Chart(document.getElementById("chart-decisiones"),{
-      type:"line",
+      type:"bar",
       data:{labels:labelsDeci,datasets:misionesDeci.map((mis,i)=>({
         label:mis,
-        data:todosMesesDeci.map(m=>deciPorMision[mis]&&deciPorMision[mis][m]?deciPorMision[mis][m]:null),
-        borderColor:COLORS[i%COLORS.length],
-        backgroundColor:"transparent",
-        tension:.4,pointRadius:4,borderWidth:2,
-        spanGaps:false
+        data:todosMesesDeci.map(m=>deciPorMision[mis]&&deciPorMision[mis][m]?deciPorMision[mis][m]:0),
+        backgroundColor:COLORS[i%COLORS.length],
+        borderRadius:3,
       }))},
-      options:{responsive:true,plugins:{legend:{position:"bottom",labels:{font:{size:11},boxWidth:12}}},
-        scales:{y:{beginAtZero:true,ticks:{stepSize:1}}}}
+      options:{responsive:true,
+        plugins:{legend:{position:"bottom",labels:{font:{size:11},boxWidth:12}}},
+        scales:{x:{ticks:{font:{size:10}}},y:{beginAtZero:true,ticks:{stepSize:1}}}
+      }
     });
 
     // Tabla decisiones por misión x mes
