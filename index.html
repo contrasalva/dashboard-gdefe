@@ -151,7 +151,7 @@ const COLORS    = ["#6366f1","#22c55e","#f59e0b","#ef4444","#3b82f6","#ec4899","
 const MESES_ES=["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
 function mesLabel(ym){const[y,m]=ym.split("-");return `${MESES_ES[parseInt(m)-1]} ${y.slice(2)}`;}
 
-let allData = [], charts = {}, vistaActual = "resumen";
+let allData = [], charts = {}, vistaActual = "resumen", heatMap = {};
 
 const fmt   = n => Number(n||0).toLocaleString("es-CL");
 const toInt = v => { const n=parseInt(String(v||0).replace(/\D/g,"")); return isNaN(n)?0:n; };
@@ -463,14 +463,19 @@ function render(){
 
     // Mapa de calor misiones x meses
     const todosMesesHM=[...new Set(allData.map(d=>d.mes))].sort();
-    const heatMap={};
+    heatMap={};
     allData.forEach(d=>{
       if(!heatMap[d.mision]) heatMap[d.mision]={};
-      if(!heatMap[d.mision][d.mes]) heatMap[d.mision][d.mes]=0;
-      heatMap[d.mision][d.mes]+=d.adultos;
+      if(!heatMap[d.mision][d.mes]) heatMap[d.mision][d.mes]={adultos:0,ninos:0,visitas:0,ninosV:0,deci:0,reuniones:0};
+      heatMap[d.mision][d.mes].adultos+=d.adultos;
+      heatMap[d.mision][d.mes].ninos+=d.ninos;
+      heatMap[d.mision][d.mes].visitas+=d.visitas;
+      heatMap[d.mision][d.mes].ninosV+=d.ninosV;
+      heatMap[d.mision][d.mes].deci+=d.deci;
+      heatMap[d.mision][d.mes].reuniones++;
     });
     let hmMax=0;
-    Object.values(heatMap).forEach(m=>Object.values(m).forEach(v=>{if(v>hmMax)hmMax=v;}));
+    Object.values(heatMap).forEach(m=>Object.values(m).forEach(v=>{if(v.adultos>hmMax)hmMax=v.adultos;}));
     const hmColor=(v)=>{
       const t=Math.pow(v/hmMax,0.55);
       const ri=Math.round(220-(220-80)*t);
@@ -597,6 +602,47 @@ function mostrarVista(v){
   render();
 }
 
+function abrirModalHM(el){
+  const mision=el.dataset.mision;
+  const mes=el.dataset.mes;
+  const d=heatMap[mision]&&heatMap[mision][mes]?heatMap[mision][mes]:null;
+  if(!d) return;
+  const mesNombre=mesLabel(mes);
+  document.getElementById("hm-modal-contenido").innerHTML=`
+    <div style="font-size:0.75rem;color:#6366f1;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">${mesNombre}</div>
+    <div style="font-size:1.25rem;font-weight:800;color:#1e293b;margin-bottom:18px">${mision}</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div style="background:#f1f5f9;border-radius:10px;padding:12px">
+        <div style="font-size:0.7rem;color:#64748b;font-weight:600;text-transform:uppercase">Adultos</div>
+        <div style="font-size:1.5rem;font-weight:800;color:#6366f1">${fmt(d.adultos)}</div>
+      </div>
+      <div style="background:#f1f5f9;border-radius:10px;padding:12px">
+        <div style="font-size:0.7rem;color:#64748b;font-weight:600;text-transform:uppercase">Niños</div>
+        <div style="font-size:1.5rem;font-weight:800;color:#f59e0b">${fmt(d.ninos)}</div>
+      </div>
+      <div style="background:#f1f5f9;border-radius:10px;padding:12px">
+        <div style="font-size:0.7rem;color:#64748b;font-weight:600;text-transform:uppercase">Visitas Adultos</div>
+        <div style="font-size:1.5rem;font-weight:800;color:#22c55e">${fmt(d.visitas)}</div>
+      </div>
+      <div style="background:#f1f5f9;border-radius:10px;padding:12px">
+        <div style="font-size:0.7rem;color:#64748b;font-weight:600;text-transform:uppercase">Visitas Niños</div>
+        <div style="font-size:1.5rem;font-weight:800;color:#a855f7">${fmt(d.ninosV)}</div>
+      </div>
+    </div>
+    <div style="margin-top:12px;background:#fff1f2;border-radius:10px;padding:12px;display:flex;align-items:center;gap:10px">
+      <span style="font-size:1.4rem">❤️</span>
+      <div>
+        <div style="font-size:0.7rem;color:#64748b;font-weight:600;text-transform:uppercase">Decisiones de Fe</div>
+        <div style="font-size:1.5rem;font-weight:800;color:#b91c1c">${fmt(d.deci)}</div>
+      </div>
+    </div>
+    <div style="margin-top:10px;font-size:0.75rem;color:#94a3b8;text-align:right">${d.reuniones} reunión${d.reuniones!==1?"es":""} ese mes</div>
+  `;
+  const modal=document.getElementById("hm-modal");
+  modal.style.display="flex";
+  modal.onclick=function(e){if(e.target===modal)modal.style.display="none";};
+}
+
 function cargar(){
   document.getElementById("loading").style.display="block";
   document.getElementById("error-msg").style.display="none";
@@ -636,5 +682,13 @@ document.getElementById("btn-actualizar").addEventListener("click",cargar);
 
 cargar();
 </script>
+
+<!-- Modal detalle celda heatmap -->
+<div id="hm-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;align-items:center;justify-content:center">
+  <div style="background:white;border-radius:16px;padding:28px 32px;min-width:300px;max-width:440px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,.2);position:relative">
+    <button onclick="document.getElementById('hm-modal').style.display='none'" style="position:absolute;top:14px;right:18px;background:none;border:none;font-size:1.3rem;cursor:pointer;color:#94a3b8">✕</button>
+    <div id="hm-modal-contenido"></div>
+  </div>
+</div>
 </body>
 </html>
