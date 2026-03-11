@@ -47,6 +47,21 @@ tr:hover td{background:#f8fafc}
 .seccion{display:none}
 .seccion.activa{display:block}
 @media(max-width:600px){.charts-grid{grid-template-columns:1fr}}
+.ranking-row{display:flex;align-items:center;gap:10px;padding:10px 4px;border-bottom:1px solid #f1f5f9;cursor:pointer;border-radius:8px;transition:background .15s}
+.ranking-row:hover{background:#f8fafc}
+.ranking-row:last-child{border-bottom:none}
+.ranking-num{font-size:0.78rem;font-weight:700;color:#94a3b8;width:22px;text-align:right;flex-shrink:0}
+.ranking-nombre{font-size:0.85rem;font-weight:600;color:#334155;width:130px;flex-shrink:0}
+.ranking-bar-wrap{flex:1;background:#f1f5f9;border-radius:6px;height:14px;overflow:hidden}
+.ranking-bar{height:100%;border-radius:6px;transition:width .5s ease}
+.ranking-valor{font-size:0.82rem;font-weight:700;color:#6366f1;width:52px;text-align:right;flex-shrink:0}
+.ranking-ult{font-size:0.72rem;color:#94a3b8;width:110px;text-align:right;flex-shrink:0}
+.ranking-row.selected{background:#eef2ff}
+.badge-crecimiento{display:inline-block;font-size:0.7rem;font-weight:700;padding:2px 7px;border-radius:20px;margin-left:6px}
+.badge-up{background:#dcfce7;color:#166534}
+.badge-down{background:#fee2e2;color:#991b1b}
+.badge-neu{background:#f1f5f9;color:#64748b}
+.mes-destacado td{background:#fef9c3 !important}
 </style>
 </head>
 <body>
@@ -99,16 +114,23 @@ tr:hover td{background:#f8fafc}
     </div>
     <div class="charts-grid">
       <div class="chart-card chart-full" id="card-sabdom" style="display:none"><h2>Tendencia Sábado vs Domingo — La Florida</h2><p class="subtitle">Promedio de asistentes por reunión según día</p><canvas id="chart-sabdom"></canvas></div>
-      <div class="chart-card chart-full"><h2>Tendencia General</h2><canvas id="chart-tendencia"></canvas></div>
+      <div class="chart-card chart-full"><h2>Tendencia General — Adultos</h2><p class="subtitle" id="tend-subtitle"></p><canvas id="chart-tendencia" style="max-height:300px"></canvas></div>
     </div>
-    <div class="chart-card"><h2>Resumen por Mes</h2><div style="overflow-x:auto"><table id="tabla-meses"><thead></thead><tbody></tbody></table></div></div>
+    <div class="chart-card" style="margin-bottom:20px"><h2>Resumen por Mes</h2><div style="overflow-x:auto"><table id="tabla-meses"><thead></thead><tbody></tbody></table></div></div>
   </div>
 
   <div class="seccion" id="sec-misiones">
-    <div class="charts-grid">
-      <div class="chart-card chart-full"><h2>Comparación entre Misiones</h2><canvas id="chart-misiones"></canvas></div>
+    <div class="charts-grid" style="margin-bottom:20px">
+      <div class="chart-card chart-full"><h2>Ranking de Misiones — Adultos (acumulado)</h2><p class="subtitle">Haz clic en una misión para ver su evolución mensual</p><div id="ranking-misiones"></div></div>
     </div>
-    <div class="chart-card" style="margin-top:0"><h2>Detalle por Misión</h2><div style="overflow-x:auto"><table id="tabla-misiones"><thead><tr><th>Misión</th><th>Adultos</th><th>Niños</th><th>Vis. Adultos</th><th>Vis. Niños</th><th>Decisiones</th><th>Total</th></tr></thead><tbody></tbody></table></div></div>
+    <div class="charts-grid" style="margin-bottom:20px">
+      <div class="chart-card chart-full" id="card-evolucion" style="display:none">
+        <h2 id="titulo-evolucion"></h2>
+        <p class="subtitle">Adultos por mes</p>
+        <canvas id="chart-evolucion" style="max-height:260px"></canvas>
+      </div>
+    </div>
+    <div class="chart-card"><h2>Detalle por Misión</h2><div style="overflow-x:auto"><table id="tabla-misiones"><thead><tr><th>Misión</th><th>Adultos</th><th>Niños</th><th>Vis. Adultos</th><th>Vis. Niños</th><th>Decisiones</th><th>Prom./reunión</th><th>Última reunión</th></tr></thead><tbody></tbody></table></div></div>
   </div>
 </main>
 
@@ -117,7 +139,8 @@ const SHEET_ID  = "1H3K5kRTe1ntcme8NylN9Ei6tYsvzvQ41_xLX0pMQe9M";
 const SHEET_GID = "1575814348";
 const CSV_URL   = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${SHEET_GID}`;
 const COLORS    = ["#6366f1","#22c55e","#f59e0b","#ef4444","#3b82f6","#ec4899","#14b8a6","#f97316","#a855f7","#64748b","#84cc16","#06b6d4"];
-const MES_LBL   = {"2025-04":"Abr 25","2025-05":"May 25","2025-06":"Jun 25","2025-07":"Jul 25","2025-08":"Ago 25","2025-09":"Sep 25","2025-10":"Oct 25","2025-11":"Nov 25","2025-12":"Dic 25","2026-01":"Ene 26","2026-02":"Feb 26","2026-03":"Mar 26"};
+const MESES_ES=["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
+function mesLabel(ym){const[y,m]=ym.split("-");return `${MESES_ES[parseInt(m)-1]} ${y.slice(2)}`;}
 
 let allData = [], charts = {}, vistaActual = "resumen";
 
@@ -176,21 +199,26 @@ function agruparMes(data,esLF){
   return meses.map(m=>{
     const r=map[m]||{mes:m,adultos:0,visitas:0,ninos:0,ninosV:0,deci:0,total:0};
     const n=cnt[m]||1;
-    return{...r,label:MES_LBL[m]||m,
+    return{...r,label:mesLabel(m),
       promedio:Math.round(r.total/n),
       promSab:cntS[m]?Math.round(sumS[m]/cntS[m]):null,
       promDom:cntD[m]?Math.round(sumD[m]/cntD[m]):null};
   });
 }
 
-function agruparMision(){
-  const map={};
-  allData.forEach(d=>{
-    if(!map[d.mision])map[d.mision]={mision:d.mision,adultos:0,ninos:0,visitas:0,ninosV:0,deci:0,total:0};
+function agruparMision(data){
+  data=data||allData;
+  const map={},cnt={},ultFecha={};
+  data.forEach(d=>{
+    if(!map[d.mision]){map[d.mision]={mision:d.mision,adultos:0,ninos:0,visitas:0,ninosV:0,deci:0,total:0};cnt[d.mision]=0;}
     map[d.mision].adultos+=d.adultos;map[d.mision].ninos+=d.ninos;map[d.mision].visitas+=d.visitas;
-    map[d.mision].ninosV+=d.ninosV;map[d.mision].deci+=d.deci;map[d.mision].total+=d.total;
+    map[d.mision].ninosV+=d.ninosV;map[d.mision].deci+=d.deci;map[d.mision].total+=d.total;cnt[d.mision]++;
+    if(!ultFecha[d.mision]||d.fecha>ultFecha[d.mision]) ultFecha[d.mision]=d.fecha;
   });
-  return Object.values(map).sort((a,b)=>b.total-a.total);
+  return Object.values(map).map(m=>({...m,
+    promedio:cnt[m.mision]?Math.round(m.adultos/cnt[m.mision]):0,
+    ultimaFecha:ultFecha[m.mision]||"—"
+  })).sort((a,b)=>b.adultos-a.adultos);
 }
 
 function destroyChart(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
@@ -361,56 +389,124 @@ function render(){
       });
     }
 
+    // Calcular mes con mayor total de adultos
+    const maxAdultos=Math.max(...meses.map(m=>m.adultos));
+
+    // Calcular % crecimiento mes a mes
+    const crecimientos=meses.map((m,i)=>{
+      if(i===0) return null;
+      const prev=meses[i-1].adultos;
+      if(!prev) return null;
+      return Math.round((m.adultos-prev)/prev*100);
+    });
+
     destroyChart("tend");
     charts["tend"]=new Chart(document.getElementById("chart-tendencia"),{
       type:"line",
       data:{labels,datasets:[
-        {label:"Adultos",data:meses.map(m=>m.adultos),borderColor:"#6366f1",tension:.3,pointRadius:3,borderWidth:2},
-        {label:"Niños",data:meses.map(m=>m.ninos),borderColor:"#f59e0b",tension:.3,pointRadius:3,borderWidth:2},
+        {label:"Adultos",data:meses.map(m=>m.adultos),borderColor:"#6366f1",backgroundColor:"rgba(99,102,241,.08)",fill:true,tension:.3,pointRadius:5,borderWidth:2.5,
+          pointBackgroundColor:meses.map(m=>m.adultos===maxAdultos?"#f59e0b":"#6366f1"),
+          pointRadius:meses.map(m=>m.adultos===maxAdultos?8:4)},
         {label:"Visitas Adultos",data:meses.map(m=>m.visitas),borderColor:"#22c55e",tension:.3,pointRadius:3,borderWidth:2},
-        {label:"Visitas Niños",data:meses.map(m=>m.ninosV),borderColor:"#a855f7",tension:.3,pointRadius:3,borderWidth:2},
       ]},
-      options:{responsive:true,plugins:{legend:{position:"bottom"}}}
+      options:{responsive:true,
+        plugins:{
+          legend:{position:"bottom"},
+          tooltip:{callbacks:{
+            afterLabel:ctx=>{
+              if(ctx.datasetIndex!==0) return;
+              const c=crecimientos[ctx.dataIndex];
+              if(c===null) return "";
+              return c>0?`▲ +${c}% vs mes anterior`:c<0?`▼ ${c}% vs mes anterior`:`= sin cambio`;
+            }
+          }}
+        }
+      }
     });
+    document.getElementById("tend-subtitle").textContent=`Punto naranja = mes con mayor asistencia · Tooltip muestra % vs mes anterior`;
 
-    // Tabla
+    // Tabla con destacado del mes máximo y % crecimiento
     const thead=document.querySelector("#tabla-meses thead");
     const tbody=document.querySelector("#tabla-meses tbody");
     thead.innerHTML=`<tr>${["Mes","Adultos","Vis. Adultos","Niños","Vis. Niños","Decisiones",
-      ...(esLF?["Prom. Sábado","Prom. Domingo"]:["Prom./reunión"]),"Total"]
+      ...(esLF?["Prom. Sábado","Prom. Domingo"]:["Prom./reunión"]),"Crecim. Adultos"]
       .map(h=>`<th>${h}</th>`).join("")}</tr>`;
-    tbody.innerHTML=meses.map((m,i)=>`<tr>
-      <td><strong>${m.label}</strong></td>
-      <td>${fmt(m.adultos)}</td><td>${fmt(m.visitas)}</td>
-      <td>${fmt(m.ninos)}</td><td>${fmt(m.ninosV)}</td>
-      <td style="color:#b91c1c;font-weight:600">${fmt(m.deci)}</td>
-      ${esLF
-        ?`<td style="color:#d97706;font-weight:600">${m.promSab!=null?`~${m.promSab}`:"—"}</td><td style="color:#6366f1;font-weight:600">${m.promDom!=null?`~${m.promDom}`:"—"}</td>`
-        :`<td style="color:#ea580c;font-weight:600">~${m.promedio}</td>`}
-      <td style="color:#6366f1;font-weight:700">${fmt(m.total)}</td>
-    </tr>`).join("");
+    tbody.innerHTML=meses.map((m,i)=>{
+      const esMejor=m.adultos===maxAdultos;
+      const c=crecimientos[i];
+      const badgeClass=c===null?"":c>0?"badge-up":c<0?"badge-down":"badge-neu";
+      const badgeText=c===null?"—":c>0?`+${c}%`:c<0?`${c}%`:"=0%";
+      return `<tr class="${esMejor?"mes-destacado":""}">
+        <td><strong>${m.label}</strong>${esMejor?" 🏆":""}</td>
+        <td>${fmt(m.adultos)}</td><td>${fmt(m.visitas)}</td>
+        <td>${fmt(m.ninos)}</td><td>${fmt(m.ninosV)}</td>
+        <td style="color:#b91c1c;font-weight:600">${fmt(m.deci)}</td>
+        ${esLF
+          ?`<td style="color:#d97706;font-weight:600">${m.promSab!=null?`~${m.promSab}`:"—"}</td><td style="color:#6366f1;font-weight:600">${m.promDom!=null?`~${m.promDom}`:"—"}</td>`
+          :`<td style="color:#ea580c;font-weight:600">~${m.promedio}</td>`}
+        <td><span class="badge-crecimiento ${badgeClass}">${badgeText}</span></td>
+      </tr>`;
+    }).join("");
   }
 
   if(vistaActual==="misiones"){
-    const pm=agruparMision();
-    destroyChart("mis");
-    charts["mis"]=new Chart(document.getElementById("chart-misiones"),{
-      type:"bar",
-      data:{labels:pm.map(m=>m.mision),datasets:[
-        {label:"Adultos",data:pm.map(m=>m.adultos),backgroundColor:"#6366f1",stack:"a"},
-        {label:"Niños",data:pm.map(m=>m.ninos),backgroundColor:"#f59e0b",stack:"a"},
-        {label:"Visitas Adultos",data:pm.map(m=>m.visitas),backgroundColor:"#22c55e",stack:"a"},
-        {label:"Visitas Niños",data:pm.map(m=>m.ninosV),backgroundColor:"#a855f7",stack:"a"},
-      ]},
-      options:{responsive:true,plugins:{legend:{position:"bottom"}},scales:{x:{stacked:true},y:{stacked:true}}}
-    });
+    const pm=agruparMision(allData);
+    const maxAdultosMis=pm[0]?pm[0].adultos:1;
+
+    // Ranking con barras de progreso
+    const rankEl=document.getElementById("ranking-misiones");
+    rankEl.innerHTML=pm.map((m,i)=>{
+      const pct=Math.round(m.adultos/maxAdultosMis*100);
+      return `<div class="ranking-row" data-mision="${m.mision}" onclick="mostrarEvolucion('${m.mision.replace(/'/g,"\\'")}')">
+        <span class="ranking-num">${i+1}</span>
+        <span class="ranking-nombre">${m.mision}</span>
+        <div class="ranking-bar-wrap"><div class="ranking-bar" style="width:${pct}%;background:${COLORS[i%COLORS.length]}"></div></div>
+        <span class="ranking-valor">${fmt(m.adultos)}</span>
+        <span class="ranking-ult">ult: ${m.ultimaFecha}</span>
+      </div>`;
+    }).join("");
+
+    // Tabla detalle
     document.querySelector("#tabla-misiones tbody").innerHTML=pm.map((m,i)=>`<tr>
       <td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${COLORS[i%COLORS.length]};margin-right:6px"></span><strong>${m.mision}</strong></td>
       <td>${fmt(m.adultos)}</td><td>${fmt(m.ninos)}</td><td>${fmt(m.visitas)}</td><td>${fmt(m.ninosV)}</td>
       <td style="color:#b91c1c;font-weight:600">❤️ ${fmt(m.deci)}</td>
-      <td style="color:#6366f1;font-weight:700">${fmt(m.total)}</td>
+      <td style="color:#ea580c;font-weight:600">~${m.promedio}</td>
+      <td style="color:#94a3b8;font-size:0.8rem">${m.ultimaFecha}</td>
     </tr>`).join("");
   }
+}
+
+function mostrarEvolucion(mision){
+  // Destacar fila seleccionada en ranking
+  document.querySelectorAll(".ranking-row").forEach(r=>{
+    r.classList.toggle("selected",r.dataset.mision===mision);
+  });
+  // Datos por mes para esa misión
+  const datosMision=allData.filter(d=>d.mision===mision);
+  const mesesUnicos=[...new Set(allData.map(d=>d.mes))].sort();
+  const mapMes={};
+  datosMision.forEach(d=>{
+    if(!mapMes[d.mes]) mapMes[d.mes]={adultos:0,visitas:0};
+    mapMes[d.mes].adultos+=d.adultos;
+    mapMes[d.mes].visitas+=d.visitas;
+  });
+  const labelsEv=mesesUnicos.map(m=>mesLabel(m));
+  const datosAdultos=mesesUnicos.map(m=>mapMes[m]?mapMes[m].adultos:null);
+  const datosVisitas=mesesUnicos.map(m=>mapMes[m]?mapMes[m].visitas:null);
+
+  document.getElementById("card-evolucion").style.display="block";
+  document.getElementById("titulo-evolucion").textContent=`Evolución mensual — ${mision}`;
+  destroyChart("evolucion");
+  charts["evolucion"]=new Chart(document.getElementById("chart-evolucion"),{
+    type:"line",
+    data:{labels:labelsEv,datasets:[
+      {label:"Adultos",data:datosAdultos,borderColor:"#6366f1",backgroundColor:"rgba(99,102,241,.1)",fill:true,tension:.3,pointRadius:4,spanGaps:true},
+      {label:"Visitas",data:datosVisitas,borderColor:"#22c55e",tension:.3,pointRadius:3,spanGaps:true},
+    ]},
+    options:{responsive:true,plugins:{legend:{position:"bottom"}},
+      scales:{y:{beginAtZero:true}}}
+  });
 }
 
 function mostrarVista(v){
