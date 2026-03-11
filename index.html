@@ -263,7 +263,7 @@ function render(){
         // Sin fecha: por mes sábado vs domingo lado a lado — TOTALES REALES
         document.getElementById("titulo-principal").textContent="Asistencia por Mes — Sábado vs Domingo";
         document.getElementById("subtitulo-principal").textContent="Total real de asistentes por mes según día";
-        const cntSabMes={}, cntDomMes={};
+        const mapSab={}, mapDom={}, cntSabMes={}, cntDomMes={};
         allData.filter(d=>d.mision==="La Florida").forEach(d=>{
           if(d.esSab){ mapSab[d.mes]=(mapSab[d.mes]||0)+d.total; cntSabMes[d.mes]=(cntSabMes[d.mes]||0)+1; }
           if(d.esDom){ mapDom[d.mes]=(mapDom[d.mes]||0)+d.total; cntDomMes[d.mes]=(cntDomMes[d.mes]||0)+1; }
