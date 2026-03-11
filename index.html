@@ -131,6 +131,14 @@ tr:hover td{background:#f8fafc}
       </div>
     </div>
     <div class="chart-card"><h2>Detalle por Misión</h2><div style="overflow-x:auto"><table id="tabla-misiones"><thead><tr><th>Misión</th><th>Adultos</th><th>Niños</th><th>Vis. Adultos</th><th>Vis. Niños</th><th>Decisiones</th><th>Prom./reunión</th><th>Última reunión</th></tr></thead><tbody></tbody></table></div></div>
+    <div class="chart-card" style="margin-top:20px">
+      <h2>Tendencia por Misión</h2>
+      <p class="subtitle" id="subtitulo-tendencia-mis"></p>
+      <div style="overflow-x:auto"><table id="tabla-tendencia-mis">
+        <thead><tr><th>Misión</th><th>Prom. 3 meses anteriores</th><th>Prom. 3 meses recientes</th><th>Cambio</th><th>Tendencia</th></tr></thead>
+        <tbody></tbody>
+      </table></div>
+    </div>
   </div>
 </main>
 
@@ -474,6 +482,52 @@ function render(){
       <td style="color:#ea580c;font-weight:600">~${m.promedio}</td>
       <td style="color:#94a3b8;font-size:0.8rem">${m.ultimaFecha}</td>
     </tr>`).join("");
+
+    // Tabla tendencia: últimos 3 meses vs 3 anteriores por misión
+    const todosMeses=[...new Set(allData.map(d=>d.mes))].sort();
+    const totalMeses=todosMeses.length;
+    const mesesRecientes=todosMeses.slice(-3);
+    const mesesAnteriores=todosMeses.slice(-6,-3);
+    const tieneAnteriores=mesesAnteriores.length>0;
+    document.getElementById("subtitulo-tendencia-mis").textContent=
+      tieneAnteriores
+        ? `Comparando ${mesesAnteriores[0]} — ${mesesAnteriores[mesesAnteriores.length-1]} vs ${mesesRecientes[0]} — ${mesesRecientes[mesesRecientes.length-1]}`
+        : "Insuficientes datos para comparar períodos (se necesitan al menos 4 meses)";
+
+    const tendRows = pm.map(m => {
+      const porMes = {};
+      allData.filter(d=>d.mision===m.mision).forEach(d=>{
+        if(!porMes[d.mes]){porMes[d.mes]={total:0,cnt:0};}
+        porMes[d.mes].total+=d.adultos; porMes[d.mes].cnt++;
+      });
+      const promPeriodo = meses => {
+        const vals = meses.map(mes => porMes[mes] ? porMes[mes].total/porMes[mes].cnt : null).filter(v=>v!==null);
+        return vals.length ? Math.round(vals.reduce((a,b)=>a+b,0)/vals.length) : null;
+      };
+      const pReciente = promPeriodo(mesesRecientes);
+      const pAnterior = promPeriodo(mesesAnteriores);
+      return {mision:m.mision, pReciente, pAnterior};
+    });
+
+    document.querySelector("#tabla-tendencia-mis tbody").innerHTML=tendRows.map((m,i)=>{
+      if(m.pReciente===null) return "";
+      let flecha="", color="#64748b", cambioTxt="—";
+      if(m.pAnterior!==null && m.pAnterior>0){
+        const diff=m.pReciente-m.pAnterior;
+        const pct=Math.round(diff/m.pAnterior*100);
+        cambioTxt=`${diff>0?"+":""}${pct}%`;
+        if(pct>=5){flecha="▲ Subiendo";color="#16a34a";}
+        else if(pct<=-5){flecha="▼ Bajando";color="#dc2626";}
+        else{flecha="● Estable";color="#d97706";}
+      } else { flecha="— Sin dato anterior"; color="#94a3b8"; }
+      return `<tr>
+        <td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${COLORS[i%COLORS.length]};margin-right:6px"></span><strong>${m.mision}</strong></td>
+        <td style="text-align:center">${m.pAnterior!==null?`~${m.pAnterior}`:"—"}</td>
+        <td style="text-align:center;font-weight:600">~${m.pReciente}</td>
+        <td style="text-align:center;font-weight:700;color:${color}">${cambioTxt}</td>
+        <td style="font-weight:600;color:${color}">${flecha}</td>
+      </tr>`;
+    }).join("");
   }
 }
 
