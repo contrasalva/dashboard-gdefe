@@ -274,7 +274,14 @@ function render(){
             {label:"Sábado",data:meses.map(m=>mapSab[m.mes]||0),backgroundColor:"#f59e0b",borderRadius:4},
             {label:"Domingo",data:meses.map(m=>mapDom[m.mes]||0),backgroundColor:"#6366f1",borderRadius:4},
           ]},
-          options:{responsive:true,plugins:{legend:{position:"bottom"}}}
+          options:{responsive:true,
+            plugins:{
+              legend:{position:"bottom"},
+              tooltip:{callbacks:{
+                label:ctx=>`${ctx.dataset.label}: ${fmt(ctx.parsed.y)} asistentes`
+              }}
+            }
+          }
         });
       }
     } else {
